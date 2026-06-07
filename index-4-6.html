@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>JUST EE 62기 전도폭발 모니터링</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<style>
+:root {
+  --bg: #f0f3f8;
+  --card: #fff;
+  --primary: #1a3ab0;
+  --primary-light: #2a5cd8;
+  --green: #2e7d32;
+  --red: #c62828;
+  --yellow: #f57f17;
+  --blue: #1565c0;
+  --orange: #e65100;
+  --text: #1a1f2e;
+  --text2: #4a5568;
+  --text3: #8899aa;
+  --border: rgba(26, 58, 176, 0.12);
+  --shadow: 0 2px 12px rgba(26, 58, 176, 0.08);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text);
+  min-height: 100vh; min-height: -webkit-fill-available;
+  padding-bottom: env(safe-area-inset-bottom, 0px); }
+input, button, select { font-family: 'Noto Sans KR', sans-serif; }
+@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+/* ── 공통 테이블 ── */
+th {
+  background: #f0f4ff;
+  color: var(--primary);
+  font-weight: 700;
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid #c5cde8;
+  border-right: 1px solid #c5cde8;
+  font-size: 10px;
+  white-space: nowrap;
+}
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(26,58,176,0.05);
+  font-size: 11px;
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+
+/* ── 카드/섹션 ── */
+.ee-card {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.ee-card-header {
+  padding: 10px 14px;
+  background: #f0f4ff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── 배지 ── */
+.stage-badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── 폼 요소 ── */
+.ee-input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: #f7f9ff;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+}
+.ee-input:focus { border-color: var(--primary); background: #fff; }
+.ee-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: #f7f9ff;
+  color: var(--text);
+  outline: none;
+}
+.ee-select:focus { border-color: var(--primary); }
+
+/* ── 버튼 ── */
+.ee-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 0;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity .15s;
+}
+.ee-btn:active { opacity: .8; }
+.ee-btn.primary { background: var(--primary); color: #fff; }
+.ee-btn.outline { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+.ee-btn.danger  { background: var(--red); color: #fff; }
+.ee-btn.sm { padding: 6px 14px; font-size: 11px; width: auto; border-radius: 6px; }
+
+/* ── 탑바 ── */
+.ee-topbar {
+  background: linear-gradient(135deg, #1a2a6c, #1a3ab0);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  box-shadow: 0 2px 12px rgba(26,42,108,0.3);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.ee-topbar-title { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 1.5px; }
+.ee-topbar-title span { color: #90caf9; font-weight: 300; font-size: 11px; display: block; letter-spacing: 2px; }
+
+/* ── 탭바 ── */
+.ee-tabbar {
+  background: #fff;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  position: sticky;
+  top: 50px;
+  z-index: 90;
+}
+.ee-tab {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: .2s;
+  text-align: center;
+  min-width: 0;
+}
+.ee-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+/* ── 연결 상태 뱃지 ── */
+.conn-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.conn-dot.ok    { background: #7ec88a; }
+.conn-dot.warn  { background: #e6b84a; }
+.conn-dot.error { background: #e07a7a; }
+
+/* ── KPI 배너 ── */
+.ee-banner {
+  background: linear-gradient(135deg, #1a2a6c, #1a3ab0);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  color: #fff;
+}
+
+/* ── 프로그레스 바 ── */
+.ee-progress-bg { background: #e5e7eb; border-radius: 4px; height: 5px; overflow: hidden; margin-top: 8px; }
+.ee-progress-fill { height: 100%; border-radius: 4px; transition: width .3s; }
+
+/* ── 섹션 제목 ── */
+.ee-section-title {
+  padding: 10px 14px;
+  background: #f0f4ff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.8px;
+  border-bottom: 1px solid rgba(26,58,176,0.1);
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+"use strict";
+const {createElement:h,useState,useRef,useEffect,useCallback,Fragment} = React;
+
+// ══════════════════════════════════════════
+//  ▼ GAS 배포 URL 입력 (유일하게 수정할 곳)
+// ══════════════════════════════════════════
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwRGW8ZXLJl9CfApM-rS5GZpHI1gvCnufbUJ6Z5g_5zJurJmDHzylfLZLrOZQG0YT21/exec";
+
+// ══════════════════════════════════════════
+//  ▼ 테스트 모드 (true = GAS 없이 더미 데이터)
+// ══════════════════════════════════════════
+const TEST_MODE = false;
+
+const DUMMY_DATA = (()=>{
+  const names = {
+    "수지주일반": [
+      {name:"김민준",en:"KIM MIN JUN",  pos:"집사",  gender:"남",dob:"1985.03.12",phone:"010-1234-5678",address:"경기도 용인시 수지구 풍덕천로 12",district:"수지2지구 은혜목장",stage:"1단계"},
+      {name:"이서연",en:"LEE SEO YEON", pos:"성도",  gender:"여",dob:"1991.07.22",phone:"010-2345-6789",address:"경기도 용인시 수지구 신봉동 34",district:"수지1지구 소망목장",stage:"2단계"},
+      {name:"박지훈",en:"PARK JI HUN",  pos:"안수집사",gender:"남",dob:"1978.11.05",phone:"010-3456-7890",address:"경기도 용인시 수지구 상현동 56",district:"수지3지구 사랑목장",stage:"3단계"},
+      {name:"최유진",en:"CHOI YU JIN",  pos:"권사",  gender:"여",dob:"1970.02.18",phone:"010-4567-8901",address:"경기도 용인시 수지구 동천동 78",district:"수지4지구 기쁨목장",stage:"1단계"},
+      {name:"정현우",en:"JUNG HYUN WOO",pos:"성도",  gender:"남",dob:"1995.09.30",phone:"010-5678-9012",address:"경기도 용인시 수지구 죽전동 90",district:"수지2지구 은혜목장",stage:"4단계"},
+      {name:"강수민",en:"KANG SU MIN",  pos:"집사",  gender:"여",dob:"1988.06.14",phone:"010-6789-0123",address:"경기도 용인시 수지구 풍덕천로 23",district:"수지1지구 소망목장",stage:"2단계"},
+      {name:"윤도현",en:"YOON DO HYUN", pos:"성도",  gender:"남",dob:"1999.12.01",phone:"010-7890-1234",address:"경기도 용인시 수지구 신봉동 45",district:"수지5지구 평화목장",stage:"5단계"},
+    ],
+    "분당주일반": [
+      {name:"한지민",en:"HAN JI MIN",   pos:"성도",  gender:"여",dob:"1993.04.25",phone:"010-8901-2345",address:"경기도 성남시 분당구 정자동 12",district:"분당1지구 믿음목장",stage:"1단계"},
+      {name:"오승환",en:"OH SEUNG HWAN",pos:"장로",  gender:"남",dob:"1965.08.09",phone:"010-9012-3456",address:"경기도 성남시 분당구 수내동 34",district:"분당2지구 소망목장",stage:"3단계"},
+      {name:"임나영",en:"LIM NA YOUNG", pos:"집사",  gender:"여",dob:"1987.01.17",phone:"010-0123-4567",address:"경기도 성남시 분당구 야탑동 56",district:"분당1지구 믿음목장",stage:"2단계"},
+      {name:"신재원",en:"SHIN JAE WON", pos:"성도",  gender:"남",dob:"1996.05.28",phone:"010-1122-3344",address:"경기도 성남시 분당구 서현동 78",district:"분당3지구 사랑목장",stage:"1단계"},
+      {name:"배은지",en:"BAE EUN JI",   pos:"권사",  gender:"여",dob:"1972.10.03",phone:"010-2233-4455",address:"경기도 성남시 분당구 구미동 90",district:"분당2지구 소망목장",stage:"4단계"},
+    ],
+    "수지화요반": [
+      {name:"류성민",en:"RYU SUNG MIN", pos:"집사",  gender:"남",dob:"1983.07.19",phone:"010-3344-5566",address:"경기도 용인시 수지구 상현동 11",district:"수지6지구 생명목장",stage:"2단계"},
+      {name:"서하은",en:"SEO HA EUN",   pos:"성도",  gender:"여",dob:"1997.03.08",phone:"010-4455-6677",address:"경기도 용인시 수지구 동천동 22",district:"수지7지구 빛목장",   stage:"1단계"},
+      {name:"문태양",en:"MOON TAE YANG",pos:"안수집사",gender:"남",dob:"1975.11.22",phone:"010-5566-7788",address:"경기도 용인시 수지구 풍덕천로 33",district:"수지6지구 생명목장",stage:"3단계"},
+      {name:"조아름",en:"CHO A REUM",   pos:"성도",  gender:"여",dob:"1992.08.14",phone:"010-6677-8899",address:"경기도 용인시 수지구 죽전동 44",district:"수지8지구 열매목장",stage:"5단계"},
+    ],
+  };
+
+  const goalData = {
+    "수지주일반": {"1단계":9,"2단계":8,"3단계":7,"4단계":5,"5단계":3},
+    "분당주일반": {"1단계":7,"2단계":6,"3단계":5,"4단계":4,"5단계":3},
+    "수지화요반": {"1단계":6,"2단계":5,"3단계":4,"4단계":3,"5단계":2},
+  };
+
+  const missingData = {
+    "수지주일반": {"1단계":["홍길동","김철수"],"2단계":["이영희"],"3단계":[],"4단계":["박민수"],"5단계":[]},
+    "분당주일반": {"1단계":["최수진"],"2단계":["정다운","오민지"],"3단계":[],"4단계":[],"5단계":["임하늘"]},
+    "수지화요반": {"1단계":["강지수","유민준"],"2단계":[],"3단계":["나선영"],"4단계":[],"5단계":[]},
+  };
+
+  // timestamp 생성 (최근 순)
+  const baseMs = Date.now();
+  const result = {};
+  for(const classKey of ["수지주일반","분당주일반","수지화요반"]){
+    result[classKey] = {
+      time: classKey==="수지주일반"?"주일 오후 3:30–6:10":classKey==="분당주일반"?"주일 오후 4:00–6:20":"화요일 오전 9:30–낮12:30",
+      members: names[classKey].map((m,i)=>{
+        const d=new Date(baseMs-(i+1)*86400000*2);
+        const ampm=d.getHours()<12?"오전":"오후";
+        const hh=d.getHours()%12||12;
+        return {...m,timestamp:`${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()} ${ampm} ${hh}:${String(d.getMinutes()).padStart(2,"0")}:00`,className:classKey};
+      }),
+      goals:   goalData[classKey],
+      missing: missingData[classKey],
+    };
+  }
+  result._updatedAt = new Date().toISOString();
+  return result;
+})();
+
+// ── 상수 ──────────────────────────────────
+const CLASS_KEYS   = ["수지주일반","분당주일반","수지화요반"];
+const CLASS_COLOR  = {"수지주일반":"#1a3ab0","분당주일반":"#2e7d32","수지화요반":"#c62828"};
+const CLASS_BG     = {"수지주일반":"#e8eeff","분당주일반":"#e8f5e9","수지화요반":"#fdecea"};
+const STAGE_ORDER  = ["1단계","2단계","3단계","4단계","5단계"];
+const STAGE_COLORS = {"1단계":"#a78bfa","2단계":"#2563eb","3단계":"#60a5fa","4단계":"#f59e0b","5단계":"#f87171"};
+
+function parseTs(ts){
+  if(!ts)return new Date(0);
+  const m=ts.match(/(\d{4})\. (\d+)\. (\d+) (오전|오후) (\d+):(\d+)/);
+  if(!m)return new Date(0);
+  let[,y,mo,d,ampm,hh,min]=m; hh=parseInt(hh);
+  if(ampm==="오후"&&hh<12)hh+=12; if(ampm==="오전"&&hh===12)hh=0;
+  return new Date(y,mo-1,d,hh,min);
+}
+function fmtTs(ts){
+  if(!ts) return "—";
+  var parts=ts.split(". ");
+  if(parts.length>=3) return parts[1]+"/"+parts[2].split(" ")[0];
+  return ts;
+}
+function exDistrict(raw){
+  if(!raw||raw==="없음"||raw==="-")return "미분류";
+  const m=raw.match(/([가-힣]+\d*지구)/);
+  return m?m[1]:(raw.split(" ")[0]||"미분류");
+}
+// 이름 뒤 영문 접미사(중복 식별용) 제거 — 화면 표시 전용
+function cleanName(raw){
+  if(!raw)return raw;
+  return raw.replace(/\s*[A-Z]{1,3}$/, "").trim();
+}
+
+// ── 공통 스타일 헬퍼 ──────────────────────
+const sec  = {background:"#fff",borderRadius:10,marginBottom:10,overflow:"hidden",boxShadow:"0 2px 12px rgba(26,58,176,0.06)"};
+const card = {background:"#fff",borderRadius:10,marginBottom:6,boxShadow:"0 2px 8px rgba(26,58,176,0.07)",border:"1px solid rgba(26,58,176,0.1)",overflow:"hidden",cursor:"pointer"};
+const secT = (color) => ({padding:"10px 14px",background:"#f0f4ff",fontSize:11,fontWeight:700,color,letterSpacing:0.8,borderBottom:"1px solid rgba(26,58,176,0.1)"});
+
+// ══════════════════════════════════════════
+//  Toast
+// ══════════════════════════════════════════
+function Toast({msg}){
+  if(!msg)return null;
+  return h("div",{style:{position:"fixed",bottom:70,left:"50%",transform:"translateX(-50%)",
+    background:"rgba(26,42,108,0.95)",color:"#fff",padding:"9px 22px",borderRadius:20,
+    fontSize:12,zIndex:600,whiteSpace:"nowrap",pointerEvents:"none"}},msg);
+}
+
+// ══════════════════════════════════════════
+//  Detail Bottom Sheet
+// ══════════════════════════════════════════
+function DetailSheet({member,onClose}){
+  const ref=useRef(null),sy=useRef(0);
+  useEffect(()=>{
+    const el=ref.current; if(!el)return;
+    const ts=e=>{sy.current=e.touches[0].clientY};
+    const te=e=>{if(e.changedTouches[0].clientY-sy.current>80)onClose()};
+    el.addEventListener("touchstart",ts,{passive:true});
+    el.addEventListener("touchend",te,{passive:true});
+    return()=>{el.removeEventListener("touchstart",ts);el.removeEventListener("touchend",te)};
+  },[]);
+  if(!member)return null;
+  const sc=STAGE_COLORS[member.stage]||"#94a3b8";
+  const rows=[
+    {k:"영문명",      v:member.en},          {k:"단계",   v:member.stage,color:sc},
+    {k:"직분",        v:member.pos},          {k:"성별",   v:member.gender},
+    {k:"생년월일",    v:member.dob+(member.dobType?` (${member.dobType})`:"")},
+    {k:"휴대폰",      v:member.phone, tel:true},
+    {k:"자택번호",    v:member.homePhone, tel:true},    {k:"이메일", v:member.email},
+    {k:"제자훈련수료",v:member.discipleType},{k:"차량가능",v:member.carAvail},
+    {k:"수료기수",    v:member.prevStages,   full:true},
+    {k:"신청일시",    v:member.timestamp,    full:true},
+    {k:"주소",        v:member.address,      full:true},
+    {k:"소속 목장",   v:member.district,     full:true},
+  ];
+  return h("div",{
+    style:{position:"fixed",inset:0,background:"rgba(10,15,40,0.55)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"},
+    onClick:e=>{if(e.target===e.currentTarget)onClose()}
+  },
+    h("div",{ref,style:{background:"#fff",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:600,maxHeight:"88vh",overflowY:"auto",paddingBottom:20}},
+      h("div",{style:{width:36,height:4,background:"rgba(0,0,20,0.12)",borderRadius:2,margin:"12px auto 14px"}}),
+      h("div",{style:{padding:"0 20px 12px",borderBottom:"1px solid #e5e7eb"}},
+        h("div",{style:{fontSize:20,fontWeight:700}},cleanName(member.name)),
+        h("div",{style:{display:"flex",gap:8,marginTop:6,flexWrap:"wrap"}},
+          h("span",{style:{background:sc+"22",color:sc,fontSize:12,fontWeight:700,padding:"3px 10px",borderRadius:6}},member.stage),
+          h("span",{style:{background:"#f0f4ff",color:"#1a3ab0",fontSize:12,fontWeight:600,padding:"3px 10px",borderRadius:6}},member.pos)
+        )
+      ),
+      h("div",{style:{padding:"14px 20px"}},
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+          rows.map(r=>h("div",{key:r.k,style:{background:"#f7f9ff",borderRadius:8,padding:"8px 12px",border:"1px solid #e5e7eb",gridColumn:r.full?"1/-1":"auto"}},
+            h("div",{style:{fontSize:9,color:"#94a3b8",fontWeight:700,letterSpacing:0.5,marginBottom:2}},r.k),
+            r.tel&&r.v
+              ? h("a",{href:"tel:"+r.v,style:{fontSize:12,color:"#2563eb",fontWeight:600,textDecoration:"none",wordBreak:"break-all"}},r.v)
+              : h("div",{style:{fontSize:12,color:r.color||"#1a1f2e",fontWeight:500,wordBreak:"break-all"}},r.v||h("em",{style:{color:"#94a3b8",fontSize:11}},"미입력"))
+          ))
+        )
+      ),
+      h("button",{onClick:onClose,style:{display:"block",width:"calc(100% - 40px)",margin:"0 20px",padding:13,background:"linear-gradient(135deg,#2a5cd8,#1a3ab0)",border:"none",borderRadius:8,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}},"닫기")
+    )
+  );
+}
+
+// ══════════════════════════════════════════
+//  로그인 화면
+// ══════════════════════════════════════════
+function LoginScreen({onLogin}){
+  const [name,setName]=useState(""), [phone,setPhone]=useState(""),
+        [err,setErr]=useState(""),   [show,setShow]=useState(false),
+        [loading,setLoading]=useState(false);
+
+  const go=async()=>{
+    if(!name.trim()){setErr("이름을 입력해주세요.");return}
+    if(!phone.trim()){setErr("전화번호 뒷 4자리를 입력해주세요.");return}
+    setLoading(true); setErr("");
+    try{
+      // ── 테스트 모드: GAS 없이 즉시 로그인 ──
+      if(TEST_MODE){
+        await new Promise(r=>setTimeout(r,400));
+        onLogin({name:name.trim(),role:"full",classKey:""});
+        return;
+      }
+      const res=await fetch(`${GAS_URL}?action=login&name=${encodeURIComponent(name.trim())}&phone=${encodeURIComponent(phone.trim())}`);
+      const data=await res.json();
+      if(!data.ok){setErr(data.error||"로그인 실패");return}
+      onLogin({name:data.name,role:data.role,classKey:data.classKey});
+    }catch(e){
+      setErr("서버 연결 실패. GAS URL을 확인해주세요.");
+    }finally{setLoading(false)}
+  };
+
+  const inp={width:"100%",padding:"12px 14px",border:"2px solid rgba(26,58,176,0.12)",borderRadius:8,fontSize:15,outline:"none",background:"#f7f9ff",boxSizing:"border-box"};
+
+  return h("div",{style:{position:"fixed",inset:0,background:"linear-gradient(160deg,#1a2a6c,#1a3ab0)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:24}},
+    h("div",{style:{background:"#fff",borderRadius:16,padding:"32px 28px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,30,0.3)",textAlign:"center"}},
+      h("div",{style:{fontSize:36,marginBottom:10}},"🙏"),
+      h("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:"#1a3ab0",marginBottom:4}},"JUST EE 제62기"),
+      h("div",{style:{fontSize:12,color:"rgba(40,50,80,0.55)",marginBottom:22}},"전도폭발 훈련 관리자 전용"),
+      TEST_MODE&&h("div",{style:{background:"#fff3e0",border:"1px solid #fb8c00",borderRadius:8,padding:"7px 14px",fontSize:11,fontWeight:700,color:"#e65100",marginBottom:16,textAlign:"center"}},
+        "🧪 테스트 모드 — 아무 이름/번호로 로그인 가능"
+      ),
+      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"이름"),
+      h("input",{value:name,onChange:e=>setName(e.target.value),onKeyDown:e=>e.key==="Enter"&&go(),placeholder:"이름을 입력하세요",style:{...inp,marginBottom:12}}),
+      h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",marginBottom:6,textAlign:"left"}},"전화번호 뒷 4자리"),
+      h("div",{style:{position:"relative",marginBottom:10}},
+        h("input",{value:phone,onChange:e=>setPhone(e.target.value),onKeyDown:e=>e.key==="Enter"&&go(),
+          type:show?"text":"password",placeholder:"뒷 4자리",inputMode:"numeric",maxLength:4,
+          style:{...inp,paddingRight:40,letterSpacing:2}}),
+        h("span",{onClick:()=>setShow(p=>!p),style:{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:18,color:"rgba(32,80,200,0.4)"}},show?"🙈":"👁")
+      ),
+      h("button",{onClick:go,disabled:loading,style:{width:"100%",padding:13,background:loading?"#8899cc":"linear-gradient(135deg,#2a5cd8,#1a3ab0)",border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:700,cursor:loading?"not-allowed":"pointer",marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
+        loading&&h("span",{style:{animation:"spin 0.8s linear infinite",display:"inline-block"}},"↻"),
+        loading?"인증 중...":"로그인"
+      ),
+      err&&h("div",{style:{fontSize:12,color:"#c62828",marginTop:10,fontWeight:600}},err)
+    )
+  );
+}
+
+// ══════════════════════════════════════════
+//  전체 탭 — 반(행) × 단계(열) 테이블
+// ══════════════════════════════════════════
+function OverallPanel({classData,user}){
+  const totalAll=CLASS_KEYS.reduce((s,k)=>s+(classData[k]?.members?.length||0),0);
+  const [expanded, setExpanded]=useState(null);
+  const [detail, setDetail]=useState(null);
+
+  const canView=(classKey)=>user.role==="full"||user.classKey===classKey;
+
+  const toggle=(classKey,stage)=>{
+    if(!canView(classKey)) return;
+    const key=classKey+"__"+stage;
+    setExpanded(p=>p===key?null:key);
+  };
+
+  return h("div",{style:{padding:"12px 12px 80px",animation:"fadeIn 0.25s ease"}},
+
+    // KPI 배너
+    h("div",{className:"ee-banner",style:{marginBottom:14}},
+      h("div",{style:{fontSize:10,opacity:0.65,letterSpacing:0.5,marginBottom:4}},"62기 전체 신청 현황"),
+      h("div",{style:{display:"flex",alignItems:"baseline",gap:6}},
+        h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:44,lineHeight:1}},totalAll),
+        h("span",{style:{fontSize:14,opacity:0.75}},"명")
+      ),
+      h("div",{style:{display:"flex",gap:14,marginTop:10,flexWrap:"wrap"}},
+        CLASS_KEYS.map(k=>{
+          const cnt=(classData[k]?.members||[]).length;
+          return h("div",{key:k,style:{display:"flex",alignItems:"center",gap:5}},
+            h("span",{style:{width:8,height:8,borderRadius:"50%",background:CLASS_COLOR[k],display:"inline-block",flexShrink:0}}),
+            h("span",{style:{fontSize:11,opacity:0.85}},k),
+            h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:16}},cnt),
+            h("span",{style:{fontSize:10,opacity:0.6}},"명")
+          );
+        })
+      )
+    ),
+
+    // ── 반 × 단계 테이블 ──
+    h("div",{style:{background:"#fff",borderRadius:12,overflow:"hidden",
+      boxShadow:"0 2px 12px rgba(26,58,176,0.07)",marginBottom:14}},
+
+      h("div",{className:"ee-section-title"},"📋 반별 단계 현황"),
+
+      h("div",{style:{overflowX:"auto"}},
+        h("table",{style:{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}},
+
+          // 헤더: 반 | 1단계 | 2단계 | 3단계 | 4단계 | 5단계 | 합계
+          h("thead",null,
+            h("tr",null,
+              h("th",{style:{width:"22%",textAlign:"left",padding:"9px 12px",background:"#f0f4ff",
+                color:"var(--primary)",fontSize:11,borderRight:"1px solid #c5cde8"}},"반"),
+              STAGE_ORDER.map((s,i)=>{
+                return h("th",{key:s,style:{width:"13%",textAlign:"center",padding:"9px 4px",
+                  background:"#f0f4ff",fontSize:11,fontWeight:700,color:"#111",
+                  borderRight:i<4?"1px solid #c5cde8":"none"}},s);
+              }),
+              h("th",{style:{width:"12%",textAlign:"center",padding:"9px 4px",
+                background:"#f0f4ff",fontSize:11,fontWeight:700,color:"var(--primary)"}},
+                "합계")
+            )
+          ),
+
+          // 바디: 반별 행
+          h("tbody",null,
+            CLASS_KEYS.map((classKey,ri)=>{
+              const cls=classData[classKey];
+              const members=cls?.members||[], goals=cls?.goals||{};
+              const color=CLASS_COLOR[classKey];
+              const stageCounts=STAGE_ORDER.reduce((a,s)=>{
+                a[s]=members.filter(r=>r.stage===s).length; return a;
+              },{});
+              const total=members.length;
+              const rowBg=ri%2===0?"#fff":"#fafbff";
+
+              return [
+                // 메인 행
+                h("tr",{key:classKey,style:{background:rowBg,borderTop:"1px solid #e8eeff"}},
+                  // 반 이름 셀
+                  h("td",{style:{padding:"10px 12px",borderRight:"1px solid #c5cde8",verticalAlign:"middle"}},
+                    h("div",{style:{display:"flex",alignItems:"center",gap:6}},
+                      h("span",{style:{width:8,height:8,borderRadius:"50%",background:color,
+                        display:"inline-block",flexShrink:0}}),
+                      h("div",null,
+                        h("div",{style:{fontSize:11,fontWeight:700,color:"#111"}},classKey.replace("반","")),
+                        h("div",{style:{fontSize:9,color:"var(--text3)",marginTop:1}},
+                          cls?.time||"")
+                      )
+                    )
+                  ),
+                  // 단계별 셀
+                  STAGE_ORDER.map((stage,si)=>{
+                    const cnt=stageCounts[stage]||0;
+                    const goal=goals[stage]||0;
+                    const pct=goal>0?Math.min(100,Math.round(cnt/goal*100)):0;
+                    const miss=goal-cnt;
+                    const c=STAGE_COLORS[stage];
+                    const key=classKey+"__"+stage;
+                    const isOpen=expanded===key;
+                    const clickable=cnt>0&&canView(classKey);
+                    return h("td",{key:stage,
+                      onClick:clickable?()=>toggle(classKey,stage):undefined,
+                      style:{textAlign:"center",padding:"10px 4px",
+                        borderRight:si<4?"1px solid #c5cde8":"none",
+                        cursor:clickable?"pointer":"default",
+                        background:isOpen?"#f0f4ff":rowBg,
+                        transition:"background 0.15s"}},
+                      h("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,
+                        color:cnt>0?(canView(classKey)?"#111":"#aab"):"#ddd",lineHeight:1}},cnt||"—")
+                    );
+                  }),
+                  // 합계 셀
+                  h("td",{style:{textAlign:"center",padding:"10px 4px",verticalAlign:"middle"}},
+                    h("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,color:"#111",lineHeight:1}},total)
+                  )
+                ),
+
+                // 펼침 행 — 해당 단계 신청자 명단
+                ...STAGE_ORDER.map(stage=>{
+                  const key=classKey+"__"+stage;
+                  if(expanded!==key) return null;
+                  const stageMembers=members.filter(r=>r.stage===stage);
+                  const c=STAGE_COLORS[stage];
+                  return h("tr",{key:key+"_detail",style:{background:c+"0d"}},
+                    h("td",{colSpan:7,style:{padding:"0 0 8px 0"}},
+                      h("div",{style:{padding:"8px 12px 4px",fontSize:10,fontWeight:700,
+                        color:c,letterSpacing:0.5}},
+                        `${classKey} · ${stage} 신청자 ${stageMembers.length}명`),
+                      h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+                        h("thead",null,
+                          h("tr",{style:{background:c+"22"}},
+                            ["이름","직분","휴대폰","소속목장"].map(th=>
+                              h("th",{key:th,style:{padding:"5px 10px",textAlign:"left",
+                                fontSize:10,color:c,fontWeight:700,
+                                borderBottom:`1px solid ${c}44`}},th)
+                            )
+                          )
+                        ),
+                        h("tbody",null,
+                          stageMembers.map((m,mi)=>
+                            h("tr",{key:mi,
+                              onClick:()=>setDetail(m),
+                              style:{cursor:"pointer",background:mi%2===0?"transparent":"rgba(255,255,255,0.5)"}},
+                              h("td",{style:{padding:"6px 10px",fontWeight:600,
+                                color:"var(--text)",fontSize:11,whiteSpace:"nowrap"}},m.name),
+                              h("td",{style:{padding:"6px 10px",color:"var(--text2)",fontSize:10}},m.pos||"—"),
+                              h("td",{style:{padding:"6px 10px",color:"var(--text2)",fontSize:10}},m.phone||"—"),
+                              h("td",{style:{padding:"6px 10px",color:"var(--text3)",fontSize:10}},m.district||"—")
+                            )
+                          )
+                        )
+                      )
+                    )
+                  );
+                }).filter(Boolean),
+              ];
+            })
+          ),
+
+          // 푸터: 합계 행
+          h("tfoot",null,
+            h("tr",{style:{background:"#f0f4ff",borderTop:"2px solid #c5cde8"}},
+              h("td",{style:{padding:"9px 12px",fontSize:11,fontWeight:700,
+                color:"var(--primary)",borderRight:"1px solid #c5cde8"}},"합계"),
+              STAGE_ORDER.map((stage,si)=>{
+                const total=CLASS_KEYS.reduce((s,k)=>
+                  s+(classData[k]?.members||[]).filter(r=>r.stage===stage).length,0);
+                const goalTotal=CLASS_KEYS.reduce((s,k)=>
+                  s+(classData[k]?.goals?.[stage]||0),0);
+                return h("td",{key:stage,style:{textAlign:"center",padding:"9px 4px",
+                  borderRight:si<4?"1px solid #c5cde8":"none"}},
+                  h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,
+                    color:"#111"}},(total||0))
+                );
+              }),
+              h("td",{style:{textAlign:"center",padding:"9px 4px"}},
+                h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,
+                  color:"#111"}},totalAll)
+              )
+            )
+          )
+        )
+      )
+    ),
+
+    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null)})
+  );
+}
+
+// ══════════════════════════════════════════
+//  반별 패널
+// ══════════════════════════════════════════
+function ClassPanel({classKey,cls}){
+  const members=cls?.members||[], goals=cls?.goals||{}, missing=cls?.missing||{};
+  const color=CLASS_COLOR[classKey];
+  const totalGoal=Object.values(goals).reduce((a,b)=>a+b,0);
+
+  const [subTab,       setSubTab]       = useState("dashboard");
+  const [stageF,       setStageF]       = useState("전체");
+  const [search,       setSearch]       = useState("");
+  const [sortKey,      setSortKey]      = useState("timestamp");
+  const [detail,       setDetail]       = useState(null);
+  const [toast,        setToast]        = useState("");
+  const [stageModal,   setStageModal]   = useState(null); // {stage, members}
+  const [distStageF,   setDistStageF]   = useState("전체"); // 지구별 단계 필터
+  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(""),2000)};
+
+  const stageCounts=STAGE_ORDER.reduce((a,s)=>{a[s]=members.filter(r=>r.stage===s).length;return a},{});
+  const total=members.length;
+  const male=members.filter(r=>r.gender==="남").length;
+  const female=members.filter(r=>r.gender==="여").length;
+
+  // 지구별 카운트 — distStageF 필터 적용
+  const districtCounts={};
+  members
+    .filter(r=>distStageF==="전체"||r.stage===distStageF)
+    .forEach(r=>{const k=exDistrict(r.district);districtCounts[k]=(districtCounts[k]||0)+1});
+
+  const filtered=members
+    .filter(r=>stageF==="전체"||r.stage===stageF)
+    .filter(r=>!search||r.name.includes(search)||(r.district||"").includes(search)||(r.pos||"").includes(search))
+    .sort((a,b)=>{
+      if(sortKey==="timestamp")return parseTs(b.timestamp)-parseTs(a.timestamp);
+      if(sortKey==="stage")    return STAGE_ORDER.indexOf(a.stage)-STAGE_ORDER.indexOf(b.stage);
+      if(sortKey==="name")     return a.name.localeCompare(b.name,"ko");
+      return 0;
+    });
+
+  const recent5=[...members].sort((a,b)=>parseTs(b.timestamp)-parseTs(a.timestamp)).slice(0,5);
+  const hasMissing=STAGE_ORDER.some(s=>(missing[s]||[]).length>0||(goals[s]-(stageCounts[s]||0))>0);
+
+  if(total===0&&!hasMissing)return h("div",{style:{padding:"40px 24px",textAlign:"center",animation:"fadeIn 0.25s ease"}},
+    h("div",{style:{fontSize:48,marginBottom:16}},"📭"),
+    h("div",{style:{fontSize:15,fontWeight:700,marginBottom:8}},classKey),
+    h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},cls?.time||""),
+    h("div",{style:{fontSize:12,color:"#aab0c0",marginTop:16}},"아직 신청자가 없습니다")
+  );
+
+  // 서브탭 렌더
+  const renderDashboard=()=>{
+    if(total===0)return h("div",{style:{textAlign:"center",padding:"40px 20px"}},
+      h("div",{style:{fontSize:40,marginBottom:10}},"📭"),
+      h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"신청자가 없습니다")
+    );
+    return h(Fragment,null,
+
+      // ── 단계별 현황 테이블 ──────────────────────
+      h("div",{style:{background:"#fff",borderRadius:10,overflow:"hidden",
+        boxShadow:"0 2px 10px rgba(26,58,176,0.07)",marginBottom:12}},
+        h("div",{style:secT(color)},"단계별 신청 현황"),
+        h("div",{style:{overflowX:"auto"}},
+          h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+            h("thead",null,
+              h("tr",null,
+                h("th",{style:{width:"28%",textAlign:"left",padding:"8px 12px",
+                  background:"#f0f4ff",color:"#111",fontSize:12,
+                  borderRight:"1px solid #c5cde8"}},"구분"),
+                STAGE_ORDER.map((s,i)=>h("th",{key:s,
+                  style:{textAlign:"center",padding:"8px 6px",background:"#f0f4ff",
+                    fontSize:12,fontWeight:700,color:"#111",
+                    borderRight:i<4?"1px solid #c5cde8":"none"}},s)),
+                h("th",{style:{textAlign:"center",padding:"8px 6px",
+                  background:"#f0f4ff",fontSize:12,fontWeight:700,
+                  color:"#111"}},"합계")
+              )
+            ),
+            h("tbody",null,
+              // 신청 행
+              h("tr",null,
+                h("td",{style:{padding:"10px 12px",fontSize:12,fontWeight:700,
+                  color:"#111",borderRight:"1px solid #c5cde8"}},"신청"),
+                STAGE_ORDER.map((st,i)=>{
+                  const cnt=stageCounts[st]||0, c=STAGE_COLORS[st];
+                  const stMembers=members.filter(r=>r.stage===st);
+                  return h("td",{key:st,
+                    onClick:cnt>0?()=>setStageModal({stage:st,members:stMembers}):undefined,
+                    style:{textAlign:"center",padding:"10px 6px",
+                      borderRight:i<4?"1px solid #c5cde8":"none",
+                      cursor:cnt>0?"pointer":"default",
+                      transition:"background 0.15s",
+                      background:"transparent"},
+                    onMouseEnter:e=>{if(cnt>0)e.currentTarget.style.background=c+"18"},
+                    onMouseLeave:e=>{e.currentTarget.style.background="transparent"}},
+                    h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",
+                      fontSize:26,color:cnt>0?c:"#ccc",lineHeight:1}},cnt||"—"),
+                    cnt>0&&h("div",{style:{fontSize:8,color:"var(--text3)",marginTop:2}},
+                      "▼ 명단")
+                  );
+                }),
+                h("td",{style:{textAlign:"center",padding:"10px 6px",
+                  cursor:"pointer"},
+                  onClick:()=>setStageModal({stage:"전체",members})},
+                  h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",
+                    fontSize:26,color:"#111",lineHeight:1}},total),
+                  h("div",{style:{fontSize:8,color:"var(--text3)",marginTop:2}},"▼ 명단")
+                )
+              ),
+              // 61기 수료자 행
+              h("tr",{style:{background:"#fafbff"}},
+                h("td",{style:{padding:"8px 12px",fontSize:11,fontWeight:700,
+                  color:"#111",fontSize:12,borderRight:"1px solid #c5cde8",
+                  whiteSpace:"nowrap"}},"61기 수료자"),
+                STAGE_ORDER.map((st,i)=>{
+                  const goal=goals[st]||0;
+                  return h("td",{key:st,style:{textAlign:"center",padding:"8px 6px",
+                    fontSize:13,fontWeight:600,color:"#111",
+                    borderRight:i<4?"1px solid #c5cde8":"none"}},
+                    goal>0?goal:"—");
+                }),
+                h("td",{style:{textAlign:"center",padding:"8px 6px",
+                  fontSize:13,fontWeight:600,color:"#111"}},
+                  totalGoal>0?totalGoal:"—")
+              )
+            )
+          )
+        )
+      ),
+
+      // ── 최근 신청 테이블 ──────────────────────────
+      h("div",{style:{background:"#fff",borderRadius:10,overflow:"hidden",
+        boxShadow:"0 2px 10px rgba(26,58,176,0.07)",marginBottom:12}},
+        h("div",{style:secT(color)},"최근 신청 5명"),
+        h("div",{style:{overflowX:"auto"}},
+          h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+            h("thead",null,
+              h("tr",null,
+                ["이름","단계","직분","소속목장","신청일시"].map((th,i)=>
+                  h("th",{key:th,style:{padding:"7px 10px",textAlign:"left",
+                    fontSize:10,color:"var(--primary)",fontWeight:700,
+                    background:"#f0f4ff",borderRight:i<4?"1px solid #c5cde8":"none"}},th)
+                )
+              )
+            ),
+            h("tbody",null,
+              recent5.map((r,i)=>{
+                const sc=STAGE_COLORS[r.stage]||"#94a3b8";
+                return h("tr",{key:i,onClick:()=>setDetail(r),
+                  style:{cursor:"pointer",background:i%2===0?"#fff":"#fafbff",
+                    borderTop:"1px solid #eef0f8"}},
+                  h("td",{style:{padding:"8px 10px",fontWeight:700,
+                    color:"var(--text)",fontSize:11,borderRight:"1px solid #eef0f8",
+                    whiteSpace:"nowrap"}},
+                    r.name),
+                  h("td",{style:{padding:"8px 10px",borderRight:"1px solid #eef0f8"}},
+                    h("span",{style:{background:sc,color:"#fff",borderRadius:4,
+                      padding:"2px 7px",fontSize:10,fontWeight:700,whiteSpace:"nowrap"}},r.stage)),
+                  h("td",{style:{padding:"8px 10px",fontSize:10,color:"var(--text2)",
+                    borderRight:"1px solid #eef0f8"}},r.pos||"—"),
+                  h("td",{style:{padding:"8px 10px",fontSize:10,color:"var(--text3)",
+                    borderRight:"1px solid #eef0f8",maxWidth:90,overflow:"hidden",
+                    textOverflow:"ellipsis",whiteSpace:"nowrap"}},r.district||"—"),
+                  h("td",{style:{padding:"8px 6px",fontSize:9,color:"var(--text3)",whiteSpace:"nowrap"}},
+                    fmtTs(r.timestamp))
+                );
+              })
+            )
+          )
+        )
+      ),
+
+      // ── 지구별 현황 — 3열 그리드 테이블 ────────────
+      h("div",{style:{background:"#fff",
+        borderRadius:10,overflow:"hidden",
+        boxShadow:"0 2px 10px rgba(26,58,176,0.07)",marginBottom:12}},
+        h("div",{style:{...secT(color),display:"flex",alignItems:"center",justifyContent:"space-between"}},
+          h("span",null,"지구별 신청 현황"),
+          h("select",{
+            value:distStageF,
+            onChange:e=>setDistStageF(e.target.value),
+            style:{fontSize:10,fontWeight:700,color,background:"#fff",
+              border:`1px solid ${color}44`,borderRadius:5,
+              padding:"2px 6px",outline:"none",cursor:"pointer"}},
+            ["전체",...STAGE_ORDER].map(s=>h("option",{key:s,value:s},s))
+          )
+        ),
+        Object.keys(districtCounts).length===0
+          ? h("div",{style:{padding:"28px 20px",textAlign:"center"}},
+              h("div",{style:{fontSize:28,marginBottom:8}},"📭"),
+              h("div",{style:{fontSize:12,color:"var(--text3,#8899aa)"}},
+                distStageF==="전체"?"신청자가 없습니다":`${distStageF} 신청자가 없습니다`)
+            )
+          : h("div",{style:{padding:"10px 10px 6px"}},
+              h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+                h("thead",null,
+                  h("tr",null,
+                    [0,1,2].map(col=>
+                      h(React.Fragment,{key:col},
+                        h("th",{style:{padding:"6px 8px",textAlign:"left",fontSize:10,
+                          fontWeight:700,color:"#111",background:"#f0f4ff",
+                          borderBottom:"1px solid #c5cde8",
+                          borderRight:"1px solid #c5cde8",
+                          borderLeft:col>0?"2px solid #dde3f0":"none",
+                          width:"27%"}},"지구명"),
+                        h("th",{style:{padding:"6px 8px",textAlign:"center",fontSize:10,
+                          fontWeight:700,color:"#111",background:"#f0f4ff",
+                          borderBottom:"1px solid #c5cde8",
+                          borderRight:col<2?"1px solid #c5cde8":"none",
+                          width:"7%"}},"인원")
+                      )
+                    )
+                  )
+                ),
+                h("tbody",null,(()=>{
+                  const entries=Object.entries(districtCounts).sort((a,b)=>b[1]-a[1]);
+                  const rows=[];
+                  for(let r=0;r<Math.ceil(entries.length/3);r++){
+                    const rowBg=r%2===0?"#fff":"#fafbff";
+                    rows.push(
+                      h("tr",{key:r,style:{background:rowBg,borderTop:"1px solid #eef0f8"}},
+                        [0,1,2].map(col=>{
+                          const idx=r*3+col;
+                          const item=entries[idx];
+                          return h(React.Fragment,{key:col},
+                            h("td",{style:{padding:"7px 8px",fontSize:11,fontWeight:700,
+                              color:item?"var(--text)":"transparent",
+                              borderRight:"1px solid #eef0f8",
+                              borderLeft:col>0?"2px solid #dde3f0":"none"}},
+                              item?h("span",null,
+                                h("span",{style:{display:"inline-block",width:6,height:6,
+                                  borderRadius:"50%",background:color,
+                                  marginRight:5,verticalAlign:"middle"}}),
+                                item[0]
+                              ):""),
+                            h("td",{style:{padding:"7px 8px",textAlign:"center",
+                              fontSize:13,fontWeight:700,color:item?color:"transparent",
+                              fontFamily:"'Bebas Neue',sans-serif",
+                              borderRight:col<2?"1px solid #eef0f8":"none"}},
+                              item?item[1]:"")
+                          );
+                        })
+                      )
+                    );
+                  }
+                  return rows;
+                })())
+              )
+            )
+      )
+    );
+  };
+
+  const renderList=()=>{
+    if(total===0)return h("div",{style:{textAlign:"center",padding:"40px 20px"}},
+      h("div",{style:{fontSize:40,marginBottom:10}},"📭"),
+      h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"신청자가 없습니다")
+    );
+    return h(Fragment,null,
+      h("div",{style:{background:"#fff",borderRadius:10,padding:"8px 10px",marginBottom:8,display:"flex",gap:6,overflowX:"auto",boxShadow:"0 2px 8px rgba(26,58,176,0.06)"}},
+        ["전체",...STAGE_ORDER].map(s=>h("button",{key:s,onClick:()=>setStageF(s),style:{flexShrink:0,padding:"5px 12px",background:stageF===s?color:"#f0f4ff",border:`1px solid ${stageF===s?color:"rgba(26,58,176,0.12)"}`,borderRadius:6,fontSize:11,fontWeight:700,color:stageF===s?"#fff":color,cursor:"pointer"}},s))
+      ),
+      h("div",{style:{background:"#fff",borderRadius:10,padding:"7px 12px",marginBottom:8,display:"flex",alignItems:"center",gap:8,boxShadow:"0 2px 8px rgba(26,58,176,0.06)"}},
+        h("span",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"🔍"),
+        h("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"이름, 목장, 직분 검색…",style:{flex:1,border:"none",background:"transparent",fontSize:13,outline:"none"}}),
+        search&&h("span",{onClick:()=>setSearch(""),style:{fontSize:12,color:"var(--text3,#8899aa)",cursor:"pointer"}},"✕")
+      ),
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,paddingInline:2}},
+        h("span",{style:{fontSize:10,color:"var(--text3,#8899aa)"}},h("strong",{style:{color}},filtered.length),"명 표시 (전체 ",total,"명)"),
+        h("select",{value:sortKey,onChange:e=>setSortKey(e.target.value),style:{background:"#f0f4ff",border:"1px solid var(--border,rgba(26,58,176,0.12))",borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color,outline:"none"}},
+          h("option",{value:"timestamp"},"최신순"),
+          h("option",{value:"stage"},"단계순"),
+          h("option",{value:"name"},"이름순")
+        )
+      ),
+      filtered.length===0
+        ? h("div",{style:{textAlign:"center",padding:"40px 20px"}},h("div",{style:{fontSize:36,marginBottom:10}},"🔍"),h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"검색 결과가 없습니다"))
+        : filtered.map((r,i)=>h("div",{key:i,style:card,onClick:()=>setDetail(r)},
+            h("div",{style:{display:"flex",alignItems:"center",padding:"10px 12px",gap:10}},
+              h("div",{style:{width:30,height:30,borderRadius:6,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},filtered.length-i),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("div",{style:{fontSize:13,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},r.name),
+                h("div",{style:{fontSize:10,color:"var(--text2,#4a5568)",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},r.pos," · ",r.district),
+                h("div",{style:{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}},
+                  h("span",{style:{background:CLASS_BG[classKey],color,fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:700}},exDistrict(r.district)),
+                  h("span",{style:{background:STAGE_COLORS[r.stage]+"22",color:STAGE_COLORS[r.stage],fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:700,whiteSpace:"nowrap"}},r.stage)
+                )
+              ),
+              h("span",{style:{fontSize:14,color:"var(--text3,#8899aa)"}},"›")
+            )
+          ))
+    );
+  };
+
+  const renderMissing=()=>{
+    if(!hasMissing)return h("div",{style:{textAlign:"center",padding:"40px 20px"}},
+      h("div",{style:{fontSize:40,marginBottom:10}},"✅"),
+      h("div",{style:{fontSize:13,color:"#2e7d32",fontWeight:700}},"미신청자 없음")
+    );
+    return h(Fragment,null,
+      h("div",{style:{background:"#fdecea",border:"1px solid rgba(198,40,40,0.2)",borderRadius:10,padding:14,marginBottom:12,display:"flex",gap:10}},
+        h("span",{style:{fontSize:20}},"⚠️"),
+        h("div",null,
+          h("div",{style:{fontWeight:700,color:"#c62828",fontSize:13,marginBottom:3}},"미신청자 알림"),
+          h("div",{style:{fontSize:12,color:"var(--text2,#4a5568)"}},"61기 수료자 중 62기를 신청하지 않은 훈련생입니다. 개별 연락이 필요합니다.")
+        )
+      ),
+      STAGE_ORDER.map(stage=>{
+        const nm=missing[stage]||[],goal=goals[stage]||0,cur=stageCounts[stage]||0;
+        const miss=goal-cur,c=STAGE_COLORS[stage];
+        if(miss<=0)return null;
+        return h("div",{key:stage,style:{...sec,border:`1px solid ${c}33`}},
+          h("div",{style:{...secT(c),background:`${c}11`,borderColor:`${c}22`,display:"flex",justifyContent:"space-between"}},
+            h("span",null,`${stage} (${cur}/${goal}명 신청)`),
+            h("span",{style:{background:"#fdecea",color:"#c62828",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4}},`미신청 ${miss}명`)
+          ),
+          h("div",{style:{padding:"4px 0"}},
+            nm.map((n,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:"1px solid rgba(26,58,176,0.05)"}},
+              h("div",{style:{width:26,height:26,borderRadius:6,background:"linear-gradient(135deg,#e03030,#b01010)",color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",marginRight:10,flexShrink:0}},i+1),
+              h("div",{style:{flex:1}},
+                h("div",{style:{fontSize:13,fontWeight:700}},n),
+                h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginTop:2}},`연락 필요 · ${stage} 미신청`)
+              ),
+              h("span",{style:{fontSize:10,color:"#c62828",fontWeight:700,background:"#fdecea",padding:"2px 8px",borderRadius:4}},"연락필요")
+            )),
+            miss>nm.length&&h("div",{style:{fontSize:11,color:"var(--text3,#8899aa)",textAlign:"center",padding:10}},`+${miss-nm.length}명 추가 확인 필요`)
+          )
+        );
+      }),
+      h("div",{style:sec},
+        h("div",{style:secT(color)},"미신청 현황 요약"),
+        h("div",{style:{display:"grid",gridTemplateColumns:"repeat(5,1fr)"}},
+          STAGE_ORDER.map(stage=>{
+            const goal=goals[stage]||0,cur=stageCounts[stage]||0,miss=goal-cur;
+            return h("div",{key:stage,style:{textAlign:"center",padding:"12px 6px",borderRight:"1px solid rgba(26,58,176,0.07)"}},
+              h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginBottom:5}},stage),
+              h("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:24,color:miss>0?"#c62828":"#2e7d32"}},miss>0?`-${miss}`:goal===0?"—":"✓"),
+              h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginTop:2}},`${cur}/${goal}명`)
+            );
+          })
+        )
+      )
+    );
+  };
+
+  return h("div",null,
+    // 서브 탭
+    h("div",{style:{background:"#fff",borderBottom:"1px solid rgba(26,58,176,0.1)",display:"flex",position:"sticky",top:94,zIndex:80}},
+      [{k:"dashboard",ico:"📊",lbl:"대시보드"},{k:"list",ico:"📋",lbl:"명단"},{k:"missing",ico:"⚠️",lbl:"미신청자"}].map(t=>
+        h("div",{key:t.k,onClick:()=>setSubTab(t.k),style:{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,cursor:"pointer",padding:"9px 6px",borderBottom:subTab===t.k?`3px solid ${color}`:"3px solid transparent",marginBottom:-1}},
+          h("span",{style:{fontSize:15}},t.ico),
+          h("span",{style:{fontSize:10,fontWeight:700,color:subTab===t.k?color:"var(--text3,#8899aa)",whiteSpace:"nowrap"}},t.lbl)
+        )
+      )
+    ),
+    h("div",{style:{padding:"12px 12px 80px",animation:"fadeIn 0.2s ease"}},
+      subTab==="dashboard"&&renderDashboard(),
+      subTab==="list"&&renderList(),
+      subTab==="missing"&&renderMissing()
+    ),
+    detail&&h(DetailSheet,{member:detail,onClose:()=>setDetail(null)}),
+    h(Toast,{msg:toast}),
+
+    // ── 단계별 명단 모달 ──────────────────────────────
+    stageModal&&h("div",{
+      onClick:e=>{if(e.target===e.currentTarget)setStageModal(null)},
+      style:{position:"fixed",inset:0,background:"rgba(10,15,40,0.55)",
+        zIndex:500,display:"flex",alignItems:"flex-end",justifyContent:"center"}},
+      h("div",{style:{background:"#fff",borderRadius:"16px 16px 0 0",
+        width:"100%",maxWidth:600,maxHeight:"80vh",
+        display:"flex",flexDirection:"column",paddingBottom:"env(safe-area-inset-bottom,0px)"}},
+        // 핸들 + 헤더
+        h("div",{style:{padding:"12px 16px 10px",borderBottom:"1px solid #e5e7eb",flexShrink:0}},
+          h("div",{style:{width:36,height:4,background:"rgba(0,0,20,0.12)",
+            borderRadius:2,margin:"0 auto 12px"}}),
+          h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+            h("div",null,
+              h("div",{style:{fontSize:14,fontWeight:700,color:"#111"}},
+                `${classKey} · ${stageModal.stage} 신청자`),
+              h("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
+                `총 ${stageModal.members.length}명`)
+            ),
+            h("button",{onClick:()=>setStageModal(null),
+              style:{background:"#f0f4ff",border:"none",borderRadius:8,
+                padding:"6px 14px",fontSize:12,fontWeight:700,
+                color:"var(--primary)",cursor:"pointer"}},"닫기")
+          )
+        ),
+        // 테이블
+        h("div",{style:{overflowY:"auto",flex:1}},
+          stageModal.members.length===0
+            ?h("div",{style:{padding:"40px 20px",textAlign:"center",
+                fontSize:13,color:"var(--text3)"}},
+              h("div",{style:{fontSize:36,marginBottom:10}},"📭"),
+              "신청자가 없습니다")
+            :h("table",{style:{width:"100%",borderCollapse:"collapse"}},
+              h("thead",{style:{position:"sticky",top:0,zIndex:1}},
+                h("tr",null,
+                  ["#","이름","단계","직분","휴대폰","소속목장"].map((th,i)=>
+                    h("th",{key:th,style:{padding:"8px 10px",textAlign:i<2?"left":"center",
+                      fontSize:10,fontWeight:700,color:"var(--primary)",
+                      background:"#f0f4ff",
+                      borderBottom:"1px solid #c5cde8",
+                      borderRight:i<5?"1px solid #c5cde8":"none",
+                      whiteSpace:"nowrap"}},th)
+                  )
+                )
+              ),
+              h("tbody",null,
+                stageModal.members.map((m,i)=>{
+                  const c=STAGE_COLORS[m.stage]||"#94a3b8";
+                  return h("tr",{key:i,
+                    onClick:()=>{setDetail(m);setStageModal(null)},
+                    style:{cursor:"pointer",
+                      background:i%2===0?"#fff":"#fafbff",
+                      borderBottom:"1px solid #eef0f8"}},
+                    h("td",{style:{padding:"8px 10px",fontSize:11,
+                      fontWeight:700,color:"var(--text3)",
+                      borderRight:"1px solid #eef0f8",
+                      textAlign:"center",width:28}},i+1),
+                    h("td",{style:{padding:"8px 10px",fontSize:12,
+                      fontWeight:700,color:"#111",
+                      borderRight:"1px solid #eef0f8",whiteSpace:"nowrap"}},m.name),
+                    h("td",{style:{padding:"8px 10px",textAlign:"center",
+                      borderRight:"1px solid #eef0f8"}},
+                      h("span",{style:{background:c+"22",color:c,
+                        fontSize:10,fontWeight:700,
+                        padding:"2px 7px",borderRadius:4,whiteSpace:"nowrap"}},m.stage||"—")),
+                    h("td",{style:{padding:"8px 10px",fontSize:10,
+                      color:"var(--text2)",textAlign:"center",
+                      borderRight:"1px solid #eef0f8"}},m.pos||"—"),
+                    h("td",{style:{padding:"8px 10px",fontSize:10,
+                      color:"var(--text2)",textAlign:"center",
+                      borderRight:"1px solid #eef0f8",whiteSpace:"nowrap"}},
+                      m.phone
+                        ? h("a",{href:"tel:"+m.phone,
+                            onClick:e=>e.stopPropagation(),
+                            style:{color:"#2563eb",fontWeight:600,textDecoration:"none"}},m.phone)
+                        : "—"),
+                    h("td",{style:{padding:"8px 10px",fontSize:10,
+                      color:"var(--text3)",maxWidth:110,
+                      overflow:"hidden",textOverflow:"ellipsis",
+                      whiteSpace:"nowrap"}},m.district||"—")
+                  );
+                })
+              )
+            )
+        )
+      )
+    )
+  );
+}
+
+// ══════════════════════════════════════════════════════
+//  OCR 패널 — OCR.space API (브라우저 직접 호출, 서버 불필요)
+// ══════════════════════════════════════════════════════
+const OCR_SPACE_KEY = "K83219514388957";
+
+// 신청서 텍스트 → 항목 파싱  (2026년 JUSTEE 신청서 양식 기준)
+function parseOcrText(text){
+  const p = {
+    className:"", stage:"", name:"", en:"", gender:"",
+    pos:"",       dob:"",   dobType:"",
+    phone:"",     homePhone:"",
+    address:"",   district:"",
+    email:"",
+    discipleType:"",
+    prevStages:"",
+    carAvail:"",
+  };
+  const full = text;
+  const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+
+  // ── 신청반 ──────────────────────────────────────────
+  const classChecked = full.match(/[Vv√■✓✔]\s*(JUST\s*EE\s*)?(수지\s*주일|수지\s*화요|분당\s*주일)/);
+  if(classChecked){
+    const t=classChecked[0];
+    if(t.includes("화요"))       p.className="수지화요반";
+    else if(t.includes("분당"))  p.className="분당주일반";
+    else                          p.className="수지주일반";
+  } else {
+    if(full.includes("화요"))                               p.className="수지화요반";
+    else if(full.includes("분당")&&full.includes("주일"))   p.className="분당주일반";
+    else if(full.includes("수지")&&full.includes("주일"))   p.className="수지주일반";
+  }
+
+  // ── 신청 단계 ─────────────────────────────────────────
+  const stageChecked = full.match(/[Vv√■✓✔]\s*([1-5])\s*단계/);
+  if(stageChecked){
+    p.stage = stageChecked[1]+"단계";
+  } else {
+    const stageM = full.match(/([1-5])\s*단계/);
+    if(stageM) p.stage = stageM[1]+"단계";
+  }
+
+  // ── 이름 (한글) ──────────────────────────────────────
+  const nameM = full.match(/이\s*름\s*(?:\([^)]{0,6}\))?\s*([가-힣]{2,5})/);
+  if(nameM) p.name = nameM[1];
+
+  // ── 성별 ─────────────────────────────────────────────
+  // ① 이름 뒤 (BC)남/여, (남), (여) 패턴
+  if(!p.gender){
+    const gBC = full.match(/\([A-Za-z]{1,3}\)\s*(남|여)/);
+    if(gBC) p.gender = gBC[1];
+  }
+  // ② V체크 감지
+  if(!p.gender){
+    const gCheck = full.match(/[Vv√■✓✔]\s*(남|여)/);
+    if(gCheck) p.gender = gCheck[1];
+  }
+  // ③ 괄호 직접 표기
+  if(!p.gender){
+    const gParen = full.match(/(\(남\)|\(여\))/);
+    if(gParen) p.gender = gParen[1].replace(/[()]/g,"");
+  }
+
+  // ── 영문명 (대소문자 혼합 지원) ───────────────────────
+  // "Jung Eun Kim" 형태 — 첫글자 대문자 단어 2~3개
+  const enM = full.match(/[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}/);
+  if(enM) p.en = enM[0].trim();
+  // 보조: 순수 대문자 2단어 이상
+  if(!p.en){
+    const enU = full.match(/[A-Z]{2,}(?:[\s\-][A-Z]{2,}){1,2}/);
+    if(enU) p.en = enU[0].trim();
+  }
+
+  // ── 생년월일 + 양/음력 ────────────────────────────────
+  const dobM = full.match(/(\d{4})\s*년?\s*(\d{1,2})\s*월?\s*(\d{1,2})\s*일?/);
+  if(dobM) p.dob=`${dobM[1]}.${dobM[2].padStart(2,"0")}.${dobM[3].padStart(2,"0")}`;
+  // 양음력: V체크 우선, 없으면 괄호 표기 확인, 기본값 양
+  if(full.includes("양")||full.includes("음")){
+    const dobTypeV = full.match(/[Vv√■✓✔]\s*(양|음)/);
+    if(dobTypeV){
+      p.dobType = dobTypeV[1];
+    } else {
+      // "(양/음)" 형태: 음에 괄호 또는 음이 먼저 나오는지 확인
+      const dobTypeParen = full.match(/\((양|음)\)/);
+      p.dobType = dobTypeParen ? dobTypeParen[1] : "양";
+    }
+  }
+
+  // ── 교회 직분 ─────────────────────────────────────────
+  ["장로","권사","안수집사","집사","성도","전도사","목사","선교사"].forEach(pos=>{
+    if(!p.pos && full.includes(pos)) p.pos=pos;
+  });
+
+  // ── 휴대폰 (점/하이픈/공백 구분자 모두 지원) ─────────
+  const phoneM = full.match(/(?:휴\s*대\s*폰[^0-9]*)?(010[\s\-\.]?\d{3,4}[\s\-\.]?\d{4})/);
+  if(phoneM) p.phone = phoneM[1].replace(/[\s\-\.]/g,"").replace(/(\d{3})(\d{3,4})(\d{4})/,"$1-$2-$3");
+
+  // ── 자택번호 ─────────────────────────────────────────
+  const homeM = full.match(/(?:자\s*택[^0-9]*)?(\(0\d{1,2}\)\s*\d{3,4}[\s\-]\d{4})/);
+  if(homeM) p.homePhone = homeM[1];
+
+  // ── 이메일 ───────────────────────────────────────────
+  const emailM = full.match(/([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/);
+  if(emailM) p.email = emailM[1];
+
+  // ── 주소 (서울/경기 전 지역 + 건물명/동호수 패턴) ────
+  for(const l of lines){
+    if(!p.address){
+      // 광역시도 키워드
+      const hasRegion = ["경기","서울","인천","부산","대구","대전","광주","울산",
+                         "수원","용인","성남","고양","화성","안산","안양","부천",
+                         "남양주","의정부","시흥","평택","파주","김포","광명",
+                         "강남","강서","종로","마포","서대문","성북","노원","강동",
+                         "송파","관악","동작","영등포","구로","금천"].some(k=>l.includes(k));
+      // 건물/도로 패턴
+      const hasAddr = /[가-힣]+(?:로|길|동|읍|면)\s*\d|아파트|APT|\d+동\s*\d+호/.test(l);
+      if(hasRegion || hasAddr){
+        // "주 소" 레이블 제거
+        p.address = l.replace(/^주\s*소\s*/, "").trim();
+      }
+    }
+  }
+
+  // ── 소속 목장/지구 ────────────────────────────────────
+  const distM = full.match(/(?:수지|분당)\s*([가-힣0-9]+지구)\s*([가-힣0-9]+목장)?/);
+  if(distM) p.district = distM[0].trim();
+  else {
+    const distM2 = full.match(/([가-힣]+\d*지구[^\n]{0,20})/);
+    if(distM2) p.district = distM2[1].trim();
+  }
+
+  // ── 제자훈련 수료 ─────────────────────────────────────
+  // V체크 우선, 없으면 "/"로 구분된 첫번째 항목
+  const discChecked = full.match(/[Vv√■✓✔]\s*(새생명반|새가족반|타교인)/);
+  if(discChecked){
+    p.discipleType = discChecked[1];
+  } else {
+    // "새생명반 / 새가족반" 중 앞에 위치한 것 (체크 없을 때 빈값 유지)
+    p.discipleType = "";
+  }
+
+  // ── 기존 수료 기수 ────────────────────────────────────
+  // "1단계( )기, 2단계( )기..." 형태 전체 캡처
+  const prevLine = lines.find(l => l.match(/[1-5]단계/) && l.match(/기[,\s]/));
+  if(prevLine){
+    // 각 단계별 기수 추출: "1단계(60)기" or "1단계( )기"
+    const stageNums = [];
+    const stageReg = /([1-5])단계\s*\(\s*([0-9]*)\s*\)\s*기/g;
+    let sm;
+    while((sm=stageReg.exec(prevLine))!==null){
+      if(sm[2]) stageNums.push(`${sm[1]}단계 ${sm[2]}기`);
+    }
+    p.prevStages = stageNums.join(", ") || prevLine.trim();
+  }
+
+  // ── 차량 이용가능 여부 ────────────────────────────────
+  if(/[Vv√■✓✔]\s*예/.test(full))        p.carAvail="예";
+  else if(/[Vv√■✓✔]\s*아니오/.test(full)) p.carAvail="아니오";
+
+  return p;
+}
+function countParsed(p){
+  return Object.values(p).filter(v=>v&&v.trim()).length;
+}
+
+function OcrPanel({onSaved}){
+  // ── 단계: upload → scanning → result(이미지+오버레이) → edit(수정폼) → done
+  const [step,      setStep]      = useState("upload");
+  const [imgSrc,    setImgSrc]    = useState(null);
+  const [imgFile,   setImgFile]   = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [ocrPhase,  setOcrPhase]  = useState("");
+  const [rawText,   setRawText]   = useState("");
+  const [parsedCnt, setParsedCnt] = useState(0);
+  const [form,setForm]=useState({
+    className:"",stage:"",name:"",en:"",gender:"",
+    pos:"",dob:"",dobType:"양",
+    phone:"",homePhone:"",
+    address:"",district:"",
+    email:"",discipleType:"",prevStages:"",carAvail:"",
+  });
+  const [msg,setMsg]=useState("");
+  const fileRef=useRef(null);
+
+  const STAGES_S  =["1단계","2단계","3단계","4단계","5단계"];
+  const POS_LIST  =["성도","집사","안수집사","권사","장로","전도사","목사","선교사"];
+  const DISC_LIST =["새생명반","새가족반","타교인"];
+  const CAR_LIST  =["예","아니오"];
+  const DOB_TYPES =["양","음"];
+  // ── 구글시트 헤더명과 1:1 매핑 ──────────────────────
+  // 시트 헤더(A~L): 타임스탬프(자동) | 신청반 | 신청단계 | 이름(식별기호) | 영문명
+  //                 교회 직분 | 생년월일 | 연락처 | 성별 | 주소
+  //                 제자훈련(필수과목) 수료 확인 | 소속 목장교회
+  const FIELD_LABELS={
+    className   : "신청반",
+    stage       : "신청단계",
+    name        : "이름(식별기호)",
+    en          : "영문명",
+    pos         : "교회 직분",
+    dob         : "생년월일",
+    phone       : "연락처",
+    gender      : "성별",
+    address     : "주소",
+    discipleType: "제자훈련(필수과목) 수료 확인",
+    district    : "소속 목장교회",
+    // 시트에 없는 보조 필드 (화면 표시용)
+    dobType     : "양/음력",
+    homePhone   : "자택번호",
+    email       : "이메일",
+    prevStages  : "기존수료기수",
+    carAvail    : "차량가능",
+  };
+
+  // 이미지 선택
+  const onFile=e=>{
+    const file=e.target.files[0]; if(!file)return;
+    setImgFile(file);
+    setImgSrc(URL.createObjectURL(file));
+    setStep("preview");
+    setMsg("");
+  };
+
+  // iOS Safari 터치 보강
+  const fileRefCb=useCallback(node=>{
+    if(!node)return;
+    fileRef.current=node;
+    node.addEventListener("touchend",e=>{e.preventDefault();node.click();},{passive:false});
+  },[]);
+
+  // OCR 실행
+  const runOcr=async()=>{
+    if(!imgFile)return;
+    setLoading(true); setOcrPhase("scanning"); setMsg("");
+    try{
+      const fd=new FormData();
+      fd.append("file",imgFile);
+      fd.append("apikey",OCR_SPACE_KEY);
+      fd.append("language","kor");
+      fd.append("OCREngine","2");
+      fd.append("scale","true");
+      fd.append("isTable","false");
+
+      const res=await fetch("https://api.ocr.space/parse/image",{method:"POST",body:fd});
+      const data=await res.json();
+      if(data.IsErroredOnProcessing) throw new Error(data.ErrorMessage?.[0]||"OCR 처리 실패");
+
+      const text=((data.ParsedResults||[])[0]||{}).ParsedText||"";
+      if(!text.trim()) throw new Error("텍스트를 인식하지 못했습니다. 더 밝고 선명하게 촬영해주세요.");
+
+      setOcrPhase("analyzing");
+      setRawText(text);
+      const parsed=parseOcrText(text);
+      setParsedCnt(countParsed(parsed));
+      setForm(f=>({...f,...parsed}));
+      setStep("result"); // 이미지 + 오버레이 표시
+    }catch(e){setMsg("❌ "+e.message); setStep("preview");}
+    finally{setLoading(false); setOcrPhase("");}
+  };
+
+  // 구글시트 저장
+  const doSave=async()=>{
+    if(!form.name){setMsg("❌ 이름은 필수입니다.");return}
+    if(!form.className){setMsg("❌ 신청반을 선택해주세요.");return}
+    if(!form.stage){setMsg("❌ 신청 단계를 선택해주세요.");return}
+    setLoading(true); setMsg("");
+    try{
+      if(TEST_MODE){
+        await new Promise(r=>setTimeout(r,700));
+        setStep("done");
+        onSaved&&onSaved();
+        return;
+      }
+      // GAS doSave 필드명 기준으로 전송
+      // GAS 컬럼순서: A타임스탬프 B신청반 C신청단계 D이름 E영문명
+      //               F직분 G생년월일 H양음력 I휴대폰 J자택번호
+      //               K성별 L주소 M이메일 N소속목장 O제자훈련수료
+      //               P수료기수 Q차량가능 R수료확인
+      // ※ GAS는 Content-Type:application/json 으로 오면
+      //   postData.contents 파싱이 실패함 → 헤더 생략 필수
+      const payload = JSON.stringify({
+        action:"save",
+        data:{
+          className   : form.className    || "",
+          stage       : form.stage        || "",
+          name        : form.name         || "",
+          en          : form.en           || "",
+          pos         : form.pos          || "",
+          dob         : form.dob          || "",
+          dobType     : form.dobType      || "",
+          phone       : form.phone        || "",
+          homePhone   : form.homePhone    || "",
+          gender      : form.gender       || "",
+          address     : form.address      || "",
+          email       : form.email        || "",
+          district    : form.district     || "",
+          discipleType: form.discipleType || "",
+          prevStages  : form.prevStages   || "",
+          carAvail    : form.carAvail     || "",
+        }
+      });
+      const res=await fetch(GAS_URL,{
+        method:"POST",
+        body:payload,         // Content-Type 헤더 없이 전송
+      });
+      const data=await res.json();
+      if(!data.ok)throw new Error(data.error||"저장 실패");
+      setStep("done");
+      onSaved&&onSaved();
+    }catch(e){setMsg("❌ "+e.message);}
+    finally{setLoading(false)}
+  };
+
+  const reset=()=>{
+    setStep("upload"); setImgSrc(null); setImgFile(null);
+    setRawText(""); setMsg(""); setParsedCnt(0);
+    setForm({className:"",stage:"",name:"",en:"",gender:"",pos:"",dob:"",dobType:"양",phone:"",homePhone:"",address:"",district:"",email:"",discipleType:"",prevStages:"",carAvail:""});
+    if(fileRef.current)fileRef.current.value="";
+  };
+
+  const ocrBtnLabel=()=>{
+    if(!loading) return "🔍 OCR 실행";
+    if(ocrPhase==="scanning")  return "⏳ 문자 인식 중...";
+    if(ocrPhase==="analyzing") return "🧠 항목 분석 중...";
+    return "처리 중...";
+  };
+
+  const fInp=(key,ph,type="text")=>h("input",{
+    type, value:form[key]||"", placeholder:ph,
+    onChange:e=>setForm(f=>({...f,[key]:e.target.value})),
+    className:"ee-input", style:{marginBottom:2},
+  });
+  const fSel=(key,opts)=>h("select",{
+    value:form[key]||"",
+    onChange:e=>setForm(f=>({...f,[key]:e.target.value})),
+    className:"ee-select", style:{marginBottom:2,color:form[key]?"var(--text)":"var(--text3)"},
+  },h("option",{value:""},"선택"),opts.map(o=>h("option",{key:o,value:o},o)));
+  const lbl=t=>h("div",{style:{fontSize:11,fontWeight:700,color:"var(--primary)",marginBottom:4,marginTop:12}},t);
+
+  // ── 완료 화면 ──────────────────────────────────────────────
+  if(step==="done") return h("div",{style:{padding:"40px 24px",textAlign:"center",animation:"fadeIn 0.3s ease"}},
+    h("div",{style:{fontSize:56,marginBottom:12}},"✅"),
+    h("div",{style:{fontSize:16,fontWeight:700,color:"#2e7d32",marginBottom:6}},
+      TEST_MODE?"[테스트] 저장 완료":"저장 완료"),
+    h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)",marginBottom:6}},
+      `${form.name}님 (${form.stage} / ${form.className})`),
+    TEST_MODE&&h("div",{style:{fontSize:11,color:"#e65100",marginBottom:20}},"※ 테스트 모드 — 실제 구글시트에는 저장되지 않았습니다"),
+    !TEST_MODE&&h("div",{style:{fontSize:12,color:"var(--text3,#8899aa)",marginBottom:20}},"구글시트에 저장됐습니다."),
+    h("button",{onClick:reset,style:{padding:"12px 32px",background:"linear-gradient(135deg,#2a5cd8,#1a3ab0)",
+      border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}},
+      "다음 신청서 입력")
+  );
+
+  return h("div",{style:{padding:"12px 12px 80px",animation:"fadeIn 0.2s ease"}},
+
+    // 안내 배너
+    h("div",{style:{background:"linear-gradient(135deg,#1a2a6c,#1a3ab0)",borderRadius:12,
+      padding:"14px 16px",marginBottom:14,color:"#fff"}},
+      h("div",{style:{fontSize:13,fontWeight:700,marginBottom:4}},"📷 수기 신청서 OCR 입력"),
+      h("div",{style:{fontSize:11,opacity:0.8,lineHeight:1.6}},
+        "①사진 촬영 → ②자동 인식 확인 → ③수정 후 제출",h("br",null),
+        "추출 결과는 이미지 아래에 바로 표시됩니다."
+      )
+    ),
+
+    // ── STEP: upload ───────────────────────────────────────
+    step==="upload"&&h(Fragment,null,
+      h("input",{ref:fileRefCb,type:"file",accept:"image/*",
+        onChange:onFile,style:{display:"none"}}),
+      h("div",{
+        onClick:()=>fileRef.current?.click(),
+        style:{border:"2px dashed rgba(26,58,176,0.25)",borderRadius:12,padding:"52px 24px",
+          textAlign:"center",cursor:"pointer",background:"#fff",marginBottom:12}
+      },
+        h("div",{style:{fontSize:52,marginBottom:14}},"📷"),
+        h("div",{style:{fontSize:15,fontWeight:700,color:"#1a3ab0",marginBottom:6}},"신청서 사진 촬영 / 선택"),
+        h("div",{style:{fontSize:12,color:"var(--text3,#8899aa)",lineHeight:1.6}},
+          "탭하여 카메라로 촬영하거나",h("br",null),"갤러리에서 사진을 선택하세요")
+      )
+    ),
+
+    // ── STEP: preview (OCR 실행 전) ─────────────────────────
+    step==="preview"&&imgSrc&&h(Fragment,null,
+      h("input",{ref:fileRefCb,type:"file",accept:"image/*",
+        onChange:onFile,style:{display:"none"}}),
+      h("div",{style:{background:"#fff",borderRadius:12,padding:8,
+        boxShadow:"0 2px 12px rgba(0,0,0,0.1)",marginBottom:10}},
+        h("img",{src:imgSrc,style:{width:"100%",borderRadius:8,display:"block"}})
+      ),
+      h("div",{style:{display:"flex",gap:8,marginBottom:8}},
+        h("button",{onClick:reset,disabled:loading,
+          style:{flex:1,padding:11,background:"#f0f2f8",border:"none",borderRadius:8,
+            fontSize:13,fontWeight:600,color:"var(--text2,#4a5568)",cursor:"pointer"}},"다시 선택"),
+        h("button",{onClick:runOcr,disabled:loading,
+          style:{flex:2,padding:11,background:loading?"#8899cc":"linear-gradient(135deg,#2a5cd8,#1a3ab0)",
+            border:"none",borderRadius:8,color:"#fff",fontSize:13,fontWeight:700,
+            cursor:loading?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
+          loading&&h("span",{style:{animation:"spin 0.8s linear infinite",display:"inline-block"}},"↻"),
+          ocrBtnLabel()
+        )
+      ),
+      msg&&h("div",{style:{padding:"9px 12px",background:"#fdecea",borderRadius:8,
+        fontSize:12,fontWeight:600,color:"#c62828"}},msg)
+    ),
+
+    // ── STEP: result (이미지 + OCR 결과 오버레이) ────────────
+    step==="result"&&imgSrc&&h(Fragment,null,
+
+      // 인식 결과 요약 헤더
+      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}},
+        h("div",{style:{fontSize:12,fontWeight:700,
+          color:parsedCnt>0?"#2e7d32":"#e65100"}},
+          parsedCnt>0?`✅ ${parsedCnt}개 항목 자동 인식`:"⚠️ 인식 항목 없음"
+        ),
+        h("button",{onClick:()=>setStep("edit"),
+          style:{fontSize:11,fontWeight:700,color:"#fff",background:"linear-gradient(135deg,#2a5cd8,#1a3ab0)",
+            border:"none",borderRadius:6,padding:"5px 14px",cursor:"pointer"}},
+          "✏️ 수정 후 제출 →")
+      ),
+
+      // 이미지 + 인식결과 오버레이 카드
+      h("div",{style:{background:"#fff",borderRadius:12,overflow:"hidden",
+        boxShadow:"0 2px 16px rgba(26,58,176,0.1)",marginBottom:10}},
+
+        // 촬영 이미지
+        h("img",{src:imgSrc,style:{width:"100%",display:"block",maxHeight:280,objectFit:"contain",background:"#f0f4ff"}}),
+
+        // 인식 결과 테이블 (이미지 바로 아래)
+        h("div",{style:{padding:"12px 14px",borderTop:"2px solid #e8eeff"}},
+          h("div",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",letterSpacing:1,marginBottom:8}},
+            "📋 OCR 인식 결과"),
+          h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 10px"}},
+            Object.entries(FIELD_LABELS).map(([k,lbl])=>{
+              const val=form[k]; const filled=!!(val&&val.trim());
+              return h("div",{key:k,style:{display:"flex",gap:6,alignItems:"flex-start",
+                padding:"5px 8px",borderRadius:6,
+                background:filled?"#f0fff4":"#fff5f5",
+                border:`1px solid ${filled?"#86efac":"#fca5a5"}`}},
+                h("span",{style:{fontSize:9,fontWeight:700,color:"var(--text3,#8899aa)",minWidth:44,paddingTop:1}},lbl),
+                h("span",{style:{fontSize:11,fontWeight:600,
+                  color:filled?"#1a1f2e":"#c62828",wordBreak:"break-all",lineHeight:1.4}},
+                  filled?val:"미인식")
+              );
+            })
+          ),
+          // OCR 원문 접기/펼치기
+          rawText&&h("details",{style:{marginTop:10}},
+            h("summary",{style:{fontSize:10,color:"var(--text3,#8899aa)",cursor:"pointer",fontWeight:700}},"📄 원문 보기"),
+            h("pre",{style:{fontSize:9,color:"#666",marginTop:6,whiteSpace:"pre-wrap",
+              background:"#f8fafc",borderRadius:6,padding:8,maxHeight:120,overflowY:"auto",
+              border:"1px solid #e2e8f0"}},rawText)
+          )
+        )
+      ),
+
+      // 하단 버튼
+      h("div",{style:{display:"flex",gap:8}},
+        h("button",{onClick:reset,
+          style:{flex:1,padding:12,background:"#f0f2f8",border:"none",borderRadius:8,
+            fontSize:13,fontWeight:600,color:"var(--text2,#4a5568)",cursor:"pointer"}},"다시 촬영"),
+        h("button",{onClick:()=>setStep("edit"),
+          style:{flex:2,padding:12,background:"linear-gradient(135deg,#2a5cd8,#1a3ab0)",
+            border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}},
+          "✏️ 수정 후 제출하기")
+      )
+    ),
+
+    // ── STEP: edit (수정 폼) ────────────────────────────────
+    step==="edit"&&h(Fragment,null,
+
+      // 이미지 썸네일 (참조용, 접기/펼치기)
+      imgSrc&&h("details",{style:{marginBottom:10}},
+        h("summary",{style:{fontSize:11,fontWeight:700,color:"#1a3ab0",cursor:"pointer",
+          padding:"8px 12px",background:"#f0f4ff",borderRadius:8}},"🖼 원본 이미지 보기"),
+        h("img",{src:imgSrc,style:{width:"100%",borderRadius:"0 0 8px 8px",display:"block",
+          maxHeight:200,objectFit:"contain",background:"#f7f9ff"}})
+      ),
+
+      h("div",{style:{background:"#fff8e1",border:"1px solid #f59e0b55",borderRadius:8,
+        padding:"10px 12px",marginBottom:12,fontSize:11,color:"#92400e",lineHeight:1.5}},
+        "⚠️ 인식 결과를 확인하고 오류가 있으면 수정 후 제출하세요."),
+
+      // 수정 폼
+      h("div",{style:{background:"#fff",borderRadius:12,padding:"16px",
+        boxShadow:"0 2px 12px rgba(26,58,176,0.07)",marginBottom:12}},
+
+        // 신청반 + 단계
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          h("div",null, lbl("신청반 *"),    fSel("className",CLASS_KEYS)),
+          h("div",null, lbl("신청 단계 *"), fSel("stage",STAGES_S))
+        ),
+
+        // 이름 + 성별
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          h("div",null, lbl("이름(한글) *"), fInp("name","홍길동")),
+          h("div",null, lbl("성별"),         fSel("gender",["남","여"]))
+        ),
+
+        // 영문명 + 직분
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          h("div",null, lbl("영문명"),   fInp("en","HONG GIL DONG")),
+          h("div",null, lbl("교회 직분"), fSel("pos",POS_LIST))
+        ),
+
+        // 생년월일 + 양/음
+        h("div",{style:{display:"grid",gridTemplateColumns:"2fr 1fr",gap:10}},
+          h("div",null, lbl("생년월일"), fInp("dob","1990.01.01")),
+          h("div",null, lbl("양/음력"),  fSel("dobType",DOB_TYPES))
+        ),
+
+        // 휴대폰 + 자택번호
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          h("div",null, lbl("휴대폰"),   fInp("phone","010-0000-0000","tel")),
+          h("div",null, lbl("자택번호"), fInp("homePhone","(031)000-0000","tel"))
+        ),
+
+        // 이메일
+        lbl("이메일"), fInp("email","example@email.com","email"),
+
+        // 주소
+        lbl("주소"), fInp("address","경기도 용인시 수지구..."),
+
+        // 소속 목장
+        lbl("소속 목장 (지구·목장)"), fInp("district","수지2지구 ○○목장"),
+
+        // 제자훈련 수료 + 차량 가능
+        h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}},
+          h("div",null, lbl("제자훈련 수료"), fSel("discipleType",[""].concat(DISC_LIST))),
+          h("div",null, lbl("차량 이용가능"), fSel("carAvail",[""].concat(CAR_LIST)))
+        ),
+
+        // 기존 수료 기수
+        lbl("기존 수료 기수 (예: 1단계 60기)"), fInp("prevStages","1단계 ○기, 2단계 ○기..."),
+      ),
+
+      h("div",{style:{display:"flex",gap:8}},
+        h("button",{onClick:()=>setStep("result"),
+          className:"ee-btn outline",style:{flex:1}},"← 인식결과"),
+        h("button",{onClick:doSave,disabled:loading,
+          className:"ee-btn primary",
+          style:{flex:2,display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+            background:loading?"#8899cc":"var(--green,#2e7d32)",opacity:loading?0.7:1,
+            cursor:loading?"not-allowed":"pointer"}},
+          loading&&h("span",{style:{animation:"spin 0.8s linear infinite",display:"inline-block"}},"↻"),
+          loading?"저장 중...":"💾 구글시트에 제출하기"
+        )
+      ),
+
+      msg&&h("div",{style:{marginTop:10,padding:"10px 14px",
+        background:msg.startsWith("❌")?"#fdecea":"#fff8e1",
+        borderRadius:8,fontSize:13,fontWeight:600,
+        color:msg.startsWith("❌")?"#c62828":"#92400e"}},msg)
+    )
+  );
+}
+
+// ══════════════════════════════════════════
+//  메인 App
+// ══════════════════════════════════════════
+function App(){
+  const [user,      setUser]      = useState(null);
+  const [activeTab, setActiveTab] = useState("overall");
+  const [classData, setClassData] = useState({});
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState("");
+  const [lastSync,  setLastSync]  = useState(null);
+
+  const fetchData=useCallback(async()=>{
+    setLoading(true); setError("");
+    try{
+      // ── 테스트 모드: 더미 데이터 반환 ──
+      if(TEST_MODE){
+        await new Promise(r=>setTimeout(r,600));
+        setClassData(DUMMY_DATA);
+        setLastSync(new Date());
+        return;
+      }
+      const res=await fetch(`${GAS_URL}?action=getData`);
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      const json=await res.json();
+      if(json.error)throw new Error(json.error);
+      setClassData(json);
+      setLastSync(new Date());
+    }catch(e){
+      setError(e.message||"데이터 로딩 실패");
+    }finally{setLoading(false)}
+  },[]);
+
+  useEffect(()=>{if(user)fetchData()},[user]);
+
+  const handleLogin=u=>{setUser(u);setActiveTab("overall")};
+
+  if(!user)return h(LoginScreen,{onLogin:handleLogin});
+
+  // 모든 유저 OCR 탭 접근 가능
+  const visibleClasses=user.role==="full"?CLASS_KEYS:[user.classKey].filter(Boolean);
+  const totalAll=CLASS_KEYS.reduce((s,k)=>s+(classData[k]?.members?.length||0),0);
+  const tabs=[
+    {key:"overall", lbl:"전체",    ico:"🗂"},
+    ...visibleClasses.map(k=>({key:k,lbl:k.replace("반",""),ico:"📌"})),
+    {key:"ocr",lbl:"수기입력",ico:"📷"},
+  ];
+
+  return h("div",{style:{fontFamily:"'Noto Sans KR',sans-serif",background:"var(--bg)",minHeight:"100vh"}},
+
+    // 탑바
+    h("div",{className:"ee-topbar"},
+      h("div",{style:{minWidth:0,flex:1}},
+        h("div",{className:"ee-topbar-title",style:{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}},
+          "JUST EE · 제62기 전도폭발",
+          TEST_MODE&&h("span",{style:{fontSize:9,background:"#fb8c00",color:"#fff",borderRadius:4,padding:"1px 5px",marginLeft:6,fontWeight:700}},"TEST")
+        ),
+        h("span",{className:"ee-topbar-title",style:{fontWeight:300,fontSize:9,opacity:0.6,display:"block",marginTop:2}},
+          `전체 ${totalAll}명`+(lastSync?` · ${lastSync.toLocaleTimeString("ko-KR")} 동기화`:"")
+        )
+      ),
+      h("div",{style:{display:"flex",alignItems:"center",gap:6,flexShrink:0}},
+        h("button",{onClick:fetchData,disabled:loading,
+          style:{fontSize:10,background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",
+            borderRadius:6,padding:"4px 8px",cursor:loading?"not-allowed":"pointer",color:"#fff",
+            display:"flex",flexDirection:"column",alignItems:"center",gap:1,fontWeight:700,lineHeight:1.2,minWidth:40}},
+          h("span",{style:{display:"inline-block",animation:loading?"spin 0.8s linear infinite":"none",fontSize:12}},"↻"),
+          loading?"로딩중":"새로고침"
+        ),
+        h("span",{style:{fontSize:9,color:"rgba(255,255,255,0.65)",maxWidth:50,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},user.name),
+        h("button",{onClick:()=>{setUser(null);setClassData({});setLastSync(null)},
+          style:{fontSize:10,background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",
+            borderRadius:6,padding:"4px 8px",cursor:"pointer",color:"#fff",fontWeight:700,lineHeight:1.2,minWidth:40,
+            display:"flex",flexDirection:"column",alignItems:"center"}},"로그아웃")
+      )
+    ),
+
+    // 탭바
+    h("div",{className:"ee-tabbar"},
+      tabs.map(t=>{
+        const active=activeTab===t.key;
+        const cnt=t.key==="overall"?totalAll:t.key==="ocr"?null:(classData[t.key]?.members||[]).length;
+        return h("div",{key:t.key,onClick:()=>setActiveTab(t.key),
+          className:"ee-tab"+(active?" active":""),
+          style:{display:"flex",flexDirection:"column",alignItems:"center",gap:1}},
+          h("span",{style:{fontSize:10}},t.lbl),
+          t.key==="ocr"&&h("span",{style:{fontSize:14,lineHeight:1}},"📷"),
+          cnt!==null&&h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,color:active?"var(--primary)":"var(--text3)"}},`${cnt}명`)
+        );
+      })
+    ),
+
+    // 오류 배너
+    error&&h("div",{style:{background:"#fdecea",borderBottom:"1px solid rgba(198,40,40,0.2)",padding:"10px 16px",display:"flex",alignItems:"center",gap:8}},
+      h("span",null,"⚠️"),
+      h("span",{style:{fontSize:12,color:"#c62828",flex:1}},error),
+      h("button",{onClick:fetchData,style:{fontSize:11,color:"#c62828",background:"none",border:"1px solid #c62828",borderRadius:5,padding:"3px 8px",cursor:"pointer"}},"재시도")
+    ),
+
+    // 콘텐츠
+    loading&&Object.keys(classData).length===0&&activeTab!=="ocr"
+      ? h("div",{style:{padding:"40px 24px",textAlign:"center"}},
+          h("div",{style:{fontSize:32,marginBottom:12,display:"inline-block",animation:"spin 1s linear infinite"}},"↻"),
+          h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"구글시트에서 데이터를 불러오는 중...")
+        )
+      : activeTab==="overall"  ? h(OverallPanel,{classData,user})
+      : activeTab==="ocr"      ? h(OcrPanel,{onSaved:fetchData})
+      : h(ClassPanel,{key:activeTab,classKey:activeTab,cls:classData[activeTab]})
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App,null));
+</script>
+</body>
+</html>
