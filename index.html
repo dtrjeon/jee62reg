@@ -383,8 +383,8 @@ function LoginScreen({onLogin}){
         [loading,setLoading]=useState(false);
 
   const go=async()=>{
-    if(!name.trim()){setErr("이름을 입력해주세요.");return}
-    if(!phone.trim()){setErr("전화번호 뒷 4자리를 입력해주세요.");return}
+    if(!name.trim()){setErr("이름(반명)을 입력해주세요.");return}
+    if(!phone.trim()){setErr("전화번호(사무실비번) 뒷 4자리를 입력해주세요.");return}
     setLoading(true); setErr("");
     try{
       // ── 테스트 모드: GAS 없이 즉시 로그인 ──
