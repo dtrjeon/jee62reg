@@ -247,9 +247,9 @@ const DUMMY_DATA = (()=>{
   };
 
   const missingData = {
-    "수지주일반": {"1단계":["홍길동","김철수"],"2단계":["이영희"],"3단계":[],"4단계":["박민수"],"5단계":[]},
-    "분당주일반": {"1단계":["최수진"],"2단계":["정다운","오민지"],"3단계":[],"4단계":[],"5단계":["임하늘"]},
-    "수지화요반": {"1단계":["강지수","유민준"],"2단계":[],"3단계":["나선영"],"4단계":[],"5단계":[]},
+    "수지주일반": {"1단계":[{name:"홍길동",phone:"010-1111-2222"},{name:"김철수",phone:"010-2222-3333"}],"2단계":[{name:"이영희",phone:"010-3333-4444"}],"3단계":[],"4단계":[{name:"박민수",phone:"010-4444-5555"}],"5단계":[]},
+    "분당주일반": {"1단계":[{name:"최수진",phone:"010-5555-6666"}],"2단계":[{name:"정다운",phone:"010-6666-7777"},{name:"오민지",phone:"010-7777-8888"}],"3단계":[],"4단계":[],"5단계":[{name:"임하늘",phone:"010-8888-9999"}]},
+    "수지화요반": {"1단계":[{name:"강지수",phone:"010-9999-0000"},{name:"유민준",phone:"010-0000-1111"}],"2단계":[],"3단계":[{name:"나선영",phone:"010-1212-3434"}],"4단계":[],"5단계":[]},
   };
 
   // timestamp 생성 (최근 순)
@@ -935,14 +935,23 @@ function ClassPanel({classKey,cls}){
             h("span",{style:{background:"#fdecea",color:"#c62828",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4}},`미신청 ${miss}명`)
           ),
           h("div",{style:{padding:"4px 0"}},
-            nm.map((n,i)=>h("div",{key:i,style:{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:"1px solid rgba(26,58,176,0.05)"}},
-              h("div",{style:{width:26,height:26,borderRadius:6,background:"linear-gradient(135deg,#e03030,#b01010)",color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",marginRight:10,flexShrink:0}},i+1),
-              h("div",{style:{flex:1}},
-                h("div",{style:{fontSize:13,fontWeight:700}},n),
-                h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginTop:2}},`연락 필요 · ${stage} 미신청`)
-              ),
-              h("span",{style:{fontSize:10,color:"#c62828",fontWeight:700,background:"#fdecea",padding:"2px 8px",borderRadius:4}},"연락필요")
-            )),
+            nm.map((n,i)=>{
+              const isObj = n && typeof n==="object";
+              const personName = isObj ? (n.name||"") : n;
+              const personPhone = isObj ? (n.phone||"") : "";
+              return h("div",{key:i,style:{display:"flex",alignItems:"center",padding:"9px 14px",borderBottom:"1px solid rgba(26,58,176,0.05)"}},
+                h("div",{style:{width:26,height:26,borderRadius:6,background:"linear-gradient(135deg,#e03030,#b01010)",color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",marginRight:10,flexShrink:0}},i+1),
+                h("div",{style:{flex:1,minWidth:0}},
+                  h("div",{style:{fontSize:13,fontWeight:700}},personName),
+                  h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginTop:2}},
+                    personPhone
+                      ? h("a",{href:`tel:${personPhone.replace(/[^0-9+]/g,"")}`,style:{color:"var(--primary,#1a3ab0)",fontWeight:700,textDecoration:"none"}},personPhone)
+                      : `연락 필요 · ${stage} 미신청`
+                  )
+                ),
+                h("span",{style:{fontSize:10,color:"#c62828",fontWeight:700,background:"#fdecea",padding:"2px 8px",borderRadius:4,whiteSpace:"nowrap",marginLeft:6}},"연락필요")
+              );
+            }),
             miss>nm.length&&h("div",{style:{fontSize:11,color:"var(--text3,#8899aa)",textAlign:"center",padding:10}},`+${miss-nm.length}명 추가 확인 필요`)
           )
         );
