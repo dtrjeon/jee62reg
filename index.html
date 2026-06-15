@@ -1113,8 +1113,17 @@ const CLASS_LABELS_SCH = ["분당주일반\n(이운학)", "수지주일반\n(이
 const CLASS_LABELS_BTN = ["분당주일반","수지주일반","수지화요반"];
 const CLASS_COLORS_SCH = ["#1a3ab0","#2e7d32","#c62828"];
 
-function SchedulePanel(){
-  const [selClass, setSelClass] = useState(1); // 기본: 수지주일반
+function SchedulePanel({user}){
+  // 로그인 반에 따른 기본 탭 설정
+  // CLASS_LABELS_BTN = ["분당주일반","수지주일반","수지화요반"] → index 0,1,2
+  const defaultClass = (()=>{
+    if(!user) return 1;
+    const ck = user.classKey || user.name || "";
+    if(ck.includes("분당")) return 0;
+    if(ck.includes("화요")) return 2;
+    return 1; // 수지주일반 or 전체관리자
+  })();
+  const [selClass, setSelClass] = useState(defaultClass);
 
   const colData=(row,ci)=>ci===0?row.col0:ci===1?row.col1:row.col2;
 
@@ -1891,7 +1900,7 @@ function App(){
         )
       : activeTab==="overall"   ? h(OverallPanel,{classData,user})
       : activeTab==="ocr"       ? h(OcrPanel,{onSaved:fetchData})
-      : activeTab==="schedule"  ? h(SchedulePanel,null)
+      : activeTab==="schedule"  ? h(SchedulePanel,{user})
       : h(ClassPanel,{key:activeTab,classKey:activeTab,cls:classData[activeTab],user})
   );
 }
