@@ -571,8 +571,8 @@ function OverallPanel({classData,user}){
                         h("tbody",null,
                           stageMembers.map((m,mi)=>
                             h("tr",{key:mi,
-                              onClick:()=>setDetail(m),
-                              style:{cursor:"pointer",background:mi%2===0?"transparent":"rgba(255,255,255,0.5)"}},
+                              onClick:user.role==="full"?()=>setDetail(m):undefined,
+                              style:{cursor:user.role==="full"?"pointer":"default",background:mi%2===0?"transparent":"rgba(255,255,255,0.5)"}},
                               h("td",{style:{padding:"6px 10px",fontWeight:600,
                                 color:"var(--text)",fontSize:11,whiteSpace:"nowrap"}},m.name),
                               h("td",{style:{padding:"6px 10px",color:"var(--text2)",fontSize:10}},m.pos||"—"),
@@ -622,9 +622,10 @@ function OverallPanel({classData,user}){
 // ══════════════════════════════════════════
 //  반별 패널
 // ══════════════════════════════════════════
-function ClassPanel({classKey,cls}){
+function ClassPanel({classKey,cls,user}){
   const members=cls?.members||[], goals=cls?.goals||{}, missing=cls?.missing||{};
   const color=CLASS_COLOR[classKey];
+  const isFull=user?.role==="full";
   const totalGoal=Object.values(goals).reduce((a,b)=>a+b,0);
 
   const [subTab,       setSubTab]       = useState("dashboard");
@@ -766,8 +767,8 @@ function ClassPanel({classKey,cls}){
             h("tbody",null,
               recent5.map((r,i)=>{
                 const sc=STAGE_COLORS[r.stage]||"#94a3b8";
-                return h("tr",{key:i,onClick:()=>setDetail(r),
-                  style:{cursor:"pointer",background:i%2===0?"#fff":"#fafbff",
+                return h("tr",{key:i,onClick:isFull?()=>setDetail(r):undefined,
+                  style:{cursor:isFull?"pointer":"default",background:i%2===0?"#fff":"#fafbff",
                     borderTop:"1px solid #eef0f8"}},
                   h("td",{style:{padding:"8px 10px",fontWeight:700,
                     color:"var(--text)",fontSize:11,borderRight:"1px solid #eef0f8",
@@ -895,7 +896,7 @@ function ClassPanel({classKey,cls}){
       ),
       filtered.length===0
         ? h("div",{style:{textAlign:"center",padding:"40px 20px"}},h("div",{style:{fontSize:36,marginBottom:10}},"🔍"),h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"검색 결과가 없습니다"))
-        : filtered.map((r,i)=>h("div",{key:i,style:card,onClick:()=>setDetail(r)},
+        : filtered.map((r,i)=>h("div",{key:i,style:{...card,cursor:isFull?"pointer":"default"},onClick:isFull?()=>setDetail(r):undefined},
             h("div",{style:{display:"flex",alignItems:"center",padding:"10px 12px",gap:10}},
               h("div",{style:{width:30,height:30,borderRadius:6,background:`linear-gradient(135deg,${color},${color}bb)`,color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},filtered.length-i),
               h("div",{style:{flex:1,minWidth:0}},
@@ -1039,8 +1040,8 @@ function ClassPanel({classKey,cls}){
                 stageModal.members.map((m,i)=>{
                   const c=STAGE_COLORS[m.stage]||"#94a3b8";
                   return h("tr",{key:i,
-                    onClick:()=>{setDetail(m);setStageModal(null)},
-                    style:{cursor:"pointer",
+                    onClick:isFull?()=>{setDetail(m);setStageModal(null)}:undefined,
+                    style:{cursor:isFull?"pointer":"default",
                       background:i%2===0?"#fff":"#fafbff",
                       borderBottom:"1px solid #eef0f8"}},
                     h("td",{style:{padding:"8px 10px",fontSize:11,
@@ -1885,7 +1886,7 @@ function App(){
       : activeTab==="overall"   ? h(OverallPanel,{classData,user})
       : activeTab==="ocr"       ? h(OcrPanel,{onSaved:fetchData})
       : activeTab==="schedule"  ? h(SchedulePanel,null)
-      : h(ClassPanel,{key:activeTab,classKey:activeTab,cls:classData[activeTab]})
+      : h(ClassPanel,{key:activeTab,classKey:activeTab,cls:classData[activeTab],user})
   );
 }
 
