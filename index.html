@@ -410,10 +410,10 @@ function LoginScreen({onLogin}){
 
   return h("div",{style:{position:"fixed",inset:0,background:"linear-gradient(160deg,#1a2a6c,#1a3ab0)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:24}},
     h("div",{style:{background:"#fff",borderRadius:16,padding:"32px 28px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,30,0.3)",textAlign:"center"}},
-      h("img",{src:JUST_LOGO,style:{width:250,height:"auto",display:"block",margin:"0 auto 8px"}}),
-      h("div",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,letterSpacing:2,color:"#1a3ab0",marginBottom:22,lineHeight:1.4}},
-        h("span",{style:{display:"block"}},"지구촌교회 전도폭발훈련"),
-        h("span",{style:{display:"block"}},"신청자 현황")
+      h("img",{src:JUST_LOGO,style:{width:225,height:"auto",display:"block",margin:"0 auto 16px"}}),
+      h("div",{style:{marginBottom:22,lineHeight:1.5}},
+        h("span",{style:{display:"block",fontFamily:"'Noto Sans KR',sans-serif",fontSize:19,fontWeight:700,color:"#1a3ab0",letterSpacing:"-0.3px"}},"지구촌교회 전도폭발훈련"),
+        h("span",{style:{display:"block",fontFamily:"'Noto Sans KR',sans-serif",fontSize:15,fontWeight:400,color:"#4a5a8a",letterSpacing:"0.5px"}},"신청자 현황")
       ),
       TEST_MODE&&h("div",{style:{background:"#fff3e0",border:"1px solid #fb8c00",borderRadius:8,padding:"7px 14px",fontSize:11,fontWeight:700,color:"#e65100",marginBottom:16,textAlign:"center"}},
         "🧪 테스트 모드 — 아무 이름/번호로 로그인 가능"
