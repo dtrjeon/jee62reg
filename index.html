@@ -381,32 +381,86 @@ function DetailSheet({member,onClose}){
 // ══════════════════════════════════════════
 //  로그인 화면
 // ══════════════════════════════════════════
+// 로그인 정보 저장 키 (카카오톡 인앱브라우저 포함, localStorage 사용)
+const LOGIN_SAVE_KEY = "ee62_saved_login";
+
 function LoginScreen({onLogin}){
   const [name,setName]=useState(""), [phone,setPhone]=useState(""),
         [err,setErr]=useState(""),   [show,setShow]=useState(false),
-        [loading,setLoading]=useState(false);
+        [loading,setLoading]=useState(false),
+        [remember,setRemember]=useState(true),
+        [autoTrying,setAutoTrying]=useState(true); // 자동로그인 시도 중 화면
 
-  const go=async()=>{
-    if(!name.trim()){setErr("이름을 입력해주세요.");return}
-    if(!phone.trim()){setErr("전화번호 뒷 4자리를 입력해주세요.");return}
+  // 저장된 로그인 정보 읽기
+  const readSaved=()=>{
+    try{
+      const raw=localStorage.getItem(LOGIN_SAVE_KEY);
+      if(!raw)return null;
+      const d=JSON.parse(raw);
+      if(d&&d.name&&d.phone)return d;
+    }catch(e){}
+    return null;
+  };
+
+  const doLogin=async(loginName,loginPhone,rememberFlag)=>{
     setLoading(true); setErr("");
     try{
+      let result=null;
       // ── 테스트 모드: GAS 없이 즉시 로그인 ──
       if(TEST_MODE){
         await new Promise(r=>setTimeout(r,400));
-        onLogin({name:name.trim(),role:"full",classKey:""});
-        return;
+        result={name:loginName.trim(),role:"full",classKey:""};
+      }else{
+        const res=await fetch(`${GAS_URL}?action=login&name=${encodeURIComponent(loginName.trim())}&phone=${encodeURIComponent(loginPhone.trim())}`);
+        const data=await res.json();
+        if(!data.ok){setErr(data.error||"로그인 실패");return false}
+        result={name:data.name,role:data.role,classKey:data.classKey};
       }
-      const res=await fetch(`${GAS_URL}?action=login&name=${encodeURIComponent(name.trim())}&phone=${encodeURIComponent(phone.trim())}`);
-      const data=await res.json();
-      if(!data.ok){setErr(data.error||"로그인 실패");return}
-      onLogin({name:data.name,role:data.role,classKey:data.classKey});
+      // 저장/삭제 처리
+      try{
+        if(rememberFlag){
+          localStorage.setItem(LOGIN_SAVE_KEY,JSON.stringify({name:loginName.trim(),phone:loginPhone.trim()}));
+        }else{
+          localStorage.removeItem(LOGIN_SAVE_KEY);
+        }
+      }catch(e){}
+      onLogin(result);
+      return true;
     }catch(e){
       setErr("서버 연결 실패. GAS URL을 확인해주세요.");
+      return false;
     }finally{setLoading(false)}
   };
 
+  // 최초 진입 시 저장된 정보가 있으면 자동 로그인 (카카오톡에서 재진입 시 바로 입장)
+  useEffect(()=>{
+    const saved=readSaved();
+    if(saved){
+      setName(saved.name); setPhone(saved.phone);
+      doLogin(saved.name,saved.phone,true).finally(()=>setAutoTrying(false));
+    }else{
+      setAutoTrying(false);
+    }
+  },[]);
+
+  const go=()=>{
+    if(!name.trim()){setErr("이름을 입력해주세요.");return}
+    if(!phone.trim()){setErr("전화번호 뒷 4자리를 입력해주세요.");return}
+    doLogin(name,phone,remember);
+  };
+
   const inp={width:"100%",padding:"12px 14px",border:"2px solid rgba(26,58,176,0.12)",borderRadius:8,fontSize:15,outline:"none",background:"#f7f9ff",boxSizing:"border-box"};
+
+  // 자동 로그인 시도 중인 짧은 로딩 화면 (깜빡임 방지)
+  if(autoTrying){
+    return h("div",{style:{position:"fixed",inset:0,background:"linear-gradient(160deg,#1a2a6c,#1a3ab0)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}},
+      h("div",{style:{textAlign:"center",color:"#fff"}},
+        h("img",{src:JUST_LOGO,style:{width:180,height:"auto",display:"block",margin:"0 auto 18px",opacity:0.95}}),
+        h("span",{style:{fontSize:20,display:"inline-block",animation:"spin 0.8s linear infinite"}},"↻"),
+        h("div",{style:{fontSize:12,marginTop:10,opacity:0.85}},"자동 로그인 중...")
+      )
+    );
+  }
 
   return h("div",{style:{position:"fixed",inset:0,background:"linear-gradient(160deg,#1a2a6c,#1a3ab0)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999,padding:24}},
     h("div",{style:{background:"#fff",borderRadius:16,padding:"32px 28px",width:"100%",maxWidth:340,boxShadow:"0 8px 40px rgba(0,0,30,0.3)",textAlign:"center"}},
@@ -426,6 +480,11 @@ function LoginScreen({onLogin}){
           type:show?"text":"password",placeholder:"반총무 문의 또는 뒷 4자리",inputMode:"numeric",maxLength:4,
           style:{...inp,paddingRight:40,letterSpacing:2}}),
         h("span",{onClick:()=>setShow(p=>!p),style:{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",cursor:"pointer",fontSize:18,color:"rgba(32,80,200,0.4)"}},show?"🙈":"👁")
+      ),
+      h("label",{style:{display:"flex",alignItems:"center",gap:7,marginBottom:14,cursor:"pointer",userSelect:"none"}},
+        h("input",{type:"checkbox",checked:remember,onChange:e=>setRemember(e.target.checked),
+          style:{width:16,height:16,accentColor:"#1a3ab0",cursor:"pointer",flexShrink:0}}),
+        h("span",{style:{fontSize:12,color:"#4a5a8a",fontWeight:600}},"아이디/비밀번호 저장 (다음에 자동 로그인)")
       ),
       h("button",{onClick:go,disabled:loading,style:{width:"100%",padding:13,background:loading?"#8899cc":"linear-gradient(135deg,#2a5cd8,#1a3ab0)",border:"none",borderRadius:8,color:"#fff",fontSize:14,fontWeight:700,cursor:loading?"not-allowed":"pointer",marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:6}},
         loading&&h("span",{style:{animation:"spin 0.8s linear infinite",display:"inline-block"}},"↻"),
@@ -1097,7 +1156,7 @@ const SCHEDULE_DATA = [
   {week:"2주", date:"9/6", col0:"9/6\n경건회: 정병철\n1단계 1과: 정병철", col1:"9/6\n경건회: 유대연\n1단계 1과: 유대연", col2:"9/8\n경건회: 김찬영\n1단계 1과: 김찬영"},
   {week:"3주", date:"9/13", col0:"9/13\n경건회: 유대연\n1단계 3과: 반장", col1:"9/13\n경건회: 박기선\n1단계 3과: 반장", col2:"9/15\n경건회: 유대연\n1단계 3과: 반장"},
   {week:"4주", date:"9/20", col0:"9/20\n경건회: 정병철\n1단계 2과: 정병철", col1:"9/20\n경건회: 유대연\n1단계 2과: 유대연", col2:"9/22\n경건회: 임종득\n1단계 2과: 임종득"},
-  {week:"5주", date:"9/27", col0:"9/27 휴강\n추석 연휴", col1:"9/27 휴강\n추석 연휴", col2:"9/29\n경건회: 임종득\n1단계 4과: 임종득\n*제29회 증보기도 컨퍼런스"},
+  {week:"5주", date:"9/27", col0:"9/27 휴강\n추석 연휴", col1:"9/27 휴강\n추석 연휴", col2:"9/29\n경건회: 임종득\n1단계 4과: 임종득\n*제29회 중보기도 컨퍼런스"},
   {week:"6주", date:"10/4", col0:"10/4\n경건회: 유대연\n1단계 4과: 유대연", col1:"10/4\n경건회: 박기선\n1단계 4과: 박기선", col2:"10/6 기도후원자모임\n경건회: 유대연\n1단계 5과: 유대연\n*추수감사 특별새벽기도회(10/5-10)"},
   {week:"7주", date:"10/11", col0:"10/11 기도후원자모임\n경건회: 정병철\n1단계 5과: 정병철", col1:"10/11 기도후원자모임\n경건회: 유대연\n1단계 5과: 유대연", col2:"10/13\n경건회: 임종득\n1단계 6과: 임종득"},
   {week:"8주", date:"10/18", col0:"10/18\n경건회: 유대연\n1단계 6과: 유대연", col1:"10/18\n경건회: 박기선\n1단계 6과: 박기선", col2:"10/20 중간점검\n경건회: 김찬영\n1단계 7과: 반장"},
