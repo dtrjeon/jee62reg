@@ -1082,7 +1082,7 @@ function ClassPanel({classKey,cls,user}){
           )
         ),
         // 테이블
-        h("div",{style:{overflowY:"auto",flex:1}},
+        h("div",{style:{overflowY:"auto",overflowX:"auto",flex:1}},
           stageModal.members.length===0
             ?h("div",{style:{padding:"40px 20px",textAlign:"center",
                 fontSize:13,color:"var(--text3)"}},
@@ -1133,14 +1133,14 @@ function ClassPanel({classKey,cls,user}){
                             style:{color:"#2563eb",fontWeight:600,textDecoration:"none"}},m.phone)
                         : "—"),
                     h("td",{style:{padding:"8px 10px",fontSize:10,
-                      color:"var(--text3)",maxWidth:110,
-                      overflow:"hidden",textOverflow:"ellipsis",
+                      color:"var(--text3)",minWidth:120,maxWidth:160,
+                      wordBreak:"keep-all",
                       borderRight:"1px solid #eef0f8",
-                      whiteSpace:"nowrap"}},m.district||"—"),
+                      whiteSpace:"normal"}},m.district||"—"),
                     h("td",{style:{padding:"8px 10px",fontSize:10,
-                      color:"var(--text3)",maxWidth:130,
-                      overflow:"hidden",textOverflow:"ellipsis",
-                      whiteSpace:"nowrap"}},m.address||"—")
+                      color:"var(--text3)",minWidth:140,maxWidth:200,
+                      wordBreak:"keep-all",
+                      whiteSpace:"normal"}},m.address||"—")
                   );
                 })
               )
