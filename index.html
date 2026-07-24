@@ -1091,12 +1091,12 @@ function ClassPanel({classKey,cls,user}){
             :h("table",{style:{width:"100%",borderCollapse:"collapse"}},
               h("thead",{style:{position:"sticky",top:0,zIndex:1}},
                 h("tr",null,
-                  ["#","이름","단계","직분","휴대폰","소속목장"].map((th,i)=>
+                  ["#","이름","단계","직분","휴대폰","소속목장","주소"].map((th,i)=>
                     h("th",{key:th,style:{padding:"8px 10px",textAlign:i<2?"left":"center",
                       fontSize:10,fontWeight:700,color:"var(--primary)",
                       background:"#f0f4ff",
                       borderBottom:"1px solid #c5cde8",
-                      borderRight:i<5?"1px solid #c5cde8":"none",
+                      borderRight:i<6?"1px solid #c5cde8":"none",
                       whiteSpace:"nowrap"}},th)
                   )
                 )
@@ -1135,7 +1135,12 @@ function ClassPanel({classKey,cls,user}){
                     h("td",{style:{padding:"8px 10px",fontSize:10,
                       color:"var(--text3)",maxWidth:110,
                       overflow:"hidden",textOverflow:"ellipsis",
-                      whiteSpace:"nowrap"}},m.district||"—")
+                      borderRight:"1px solid #eef0f8",
+                      whiteSpace:"nowrap"}},m.district||"—"),
+                    h("td",{style:{padding:"8px 10px",fontSize:10,
+                      color:"var(--text3)",maxWidth:130,
+                      overflow:"hidden",textOverflow:"ellipsis",
+                      whiteSpace:"nowrap"}},m.address||"—")
                   );
                 })
               )
