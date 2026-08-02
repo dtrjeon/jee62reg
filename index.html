@@ -1522,13 +1522,37 @@ function OcrPanel({onSaved}){
     carAvail    : "차량가능",
   };
 
+  // 이미지 리사이즈+압축 (OCR.space 무료키 용량 제한 대응, 인식률 향상)
+  const compressImage=(file,maxDim=1800,quality=0.85)=>new Promise((resolve)=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let {width:w,height:h}=img;
+      if(w>maxDim||h>maxDim){
+        if(w>h){h=Math.round(h*maxDim/w);w=maxDim;}
+        else{w=Math.round(w*maxDim/h);h=maxDim;}
+      }
+      const canvas=document.createElement("canvas");
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob=>{
+        if(!blob){resolve(file);return;}
+        resolve(new File([blob],(file.name||"photo")+".jpg",{type:"image/jpeg"}));
+      },"image/jpeg",quality);
+    };
+    img.onerror=()=>resolve(file);
+    img.src=url;
+  });
+
   // 이미지 선택
-  const onFile=e=>{
+  const onFile=async e=>{
     const file=e.target.files[0]; if(!file)return;
-    setImgFile(file);
-    setImgSrc(URL.createObjectURL(file));
-    setStep("preview");
-    setMsg("");
+    setStep("preview"); setMsg(""); setImgSrc(URL.createObjectURL(file));
+    const compressed=await compressImage(file);
+    setImgFile(compressed);
+    setImgSrc(URL.createObjectURL(compressed));
   };
 
   // iOS Safari 터치 보강
@@ -1538,24 +1562,32 @@ function OcrPanel({onSaved}){
     node.addEventListener("touchend",e=>{e.preventDefault();node.click();},{passive:false});
   },[]);
 
-  // OCR 실행
+  // OCR 실행 (엔진2 실패 시 엔진1로 재시도)
+  const callOcr=async(engine)=>{
+    const fd=new FormData();
+    fd.append("file",imgFile);
+    fd.append("apikey",OCR_SPACE_KEY);
+    fd.append("language","kor");
+    fd.append("OCREngine",engine);
+    fd.append("scale","true");
+    fd.append("isTable","false");
+    const res=await fetch("https://api.ocr.space/parse/image",{method:"POST",body:fd});
+    const data=await res.json();
+    if(data.IsErroredOnProcessing) throw new Error(data.ErrorMessage?.[0]||"OCR 처리 실패");
+    return ((data.ParsedResults||[])[0]||{}).ParsedText||"";
+  };
+
   const runOcr=async()=>{
     if(!imgFile)return;
     setLoading(true); setOcrPhase("scanning"); setMsg("");
     try{
-      const fd=new FormData();
-      fd.append("file",imgFile);
-      fd.append("apikey",OCR_SPACE_KEY);
-      fd.append("language","kor");
-      fd.append("OCREngine","2");
-      fd.append("scale","true");
-      fd.append("isTable","false");
-
-      const res=await fetch("https://api.ocr.space/parse/image",{method:"POST",body:fd});
-      const data=await res.json();
-      if(data.IsErroredOnProcessing) throw new Error(data.ErrorMessage?.[0]||"OCR 처리 실패");
-
-      const text=((data.ParsedResults||[])[0]||{}).ParsedText||"";
+      let text="";
+      try{
+        text=await callOcr("2");
+      }catch(e1){/* 엔진2 실패 시 엔진1로 재시도 */}
+      if(!text.trim()){
+        try{ text=await callOcr("1"); }catch(e2){/* 무시하고 아래에서 최종 에러 처리 */}
+      }
       if(!text.trim()) throw new Error("텍스트를 인식하지 못했습니다. 더 밝고 선명하게 촬영해주세요.");
 
       setOcrPhase("analyzing");
