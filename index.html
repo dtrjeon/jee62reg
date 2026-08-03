@@ -19,6 +19,7 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg: #f0f3f8;
@@ -345,6 +346,26 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
 
   useEffect(()=>{ setForm(member||{}); setEditing(false); setErr(""); setConfirmDel(false); },[member]);
 
+  // 시트가 열려있는 동안 배경 페이지 스크롤/바운스 잠금 (iOS에서 배경이 같이 움직이며
+  // 화면이 확대되어 보이는 현상 방지)
+  useEffect(()=>{
+    const prevOverflow=document.body.style.overflow;
+    const prevPosition=document.body.style.position;
+    const prevWidth=document.body.style.width;
+    const scrollY=window.scrollY;
+    document.body.style.overflow="hidden";
+    document.body.style.position="fixed";
+    document.body.style.width="100%";
+    document.body.style.top=`-${scrollY}px`;
+    return()=>{
+      document.body.style.overflow=prevOverflow;
+      document.body.style.position=prevPosition;
+      document.body.style.width=prevWidth;
+      document.body.style.top="";
+      window.scrollTo(0,scrollY);
+    };
+  },[]);
+
   useEffect(()=>{
     const el=ref.current; if(!el)return;
     const ts=e=>{sy.current=e.touches[0].clientY};
@@ -358,7 +379,7 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
   const sc=STAGE_COLORS[form.stage]||"#94a3b8";
   const set=(k,v)=>setForm(f=>({...f,[k]:v}));
 
-  const inputStyle={width:"100%",fontSize:12,color:"#1a1f2e",fontWeight:500,border:"1px solid #dbe1f5",
+  const inputStyle={width:"100%",fontSize:16,color:"#1a1f2e",fontWeight:500,border:"1px solid #dbe1f5",
     borderRadius:6,padding:"5px 7px",boxSizing:"border-box",background:"#fff"};
   const selectStyle={...inputStyle};
 
@@ -1212,10 +1233,30 @@ function ClassPanel({classKey,cls,user,onDataChange}){
               h("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
                 `총 ${stageModal.members.length}명`)
             ),
-            h("button",{onClick:()=>setStageModal(null),
-              style:{background:"#f0f4ff",border:"none",borderRadius:8,
-                padding:"6px 14px",fontSize:12,fontWeight:700,
-                color:"var(--primary)",cursor:"pointer"}},"닫기")
+            h("div",{style:{display:"flex",gap:6,flexShrink:0}},
+              h("button",{onClick:()=>{
+                  const sorted=[...stageModal.members].sort((a,b)=>{
+                    const ai=STAGE_ORDER.indexOf(a.stage), bi=STAGE_ORDER.indexOf(b.stage);
+                    if(ai!==bi) return ai-bi;
+                    return (a.name||"").localeCompare(b.name||"","ko");
+                  });
+                  const data=sorted.map((m,i)=>({
+                    "#":i+1,"이름":m.name||"","단계":m.stage||"","직분":m.pos||"",
+                    "휴대폰":m.phone||"","소속목장":m.district||"","주소":m.address||""
+                  }));
+                  const ws=XLSX.utils.json_to_sheet(data);
+                  const wb=XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb,ws,(stageModal.stage||"명단").slice(0,31));
+                  XLSX.writeFile(wb,`${classKey}_${stageModal.stage}_신청자명단.xlsx`);
+                },
+                style:{background:"#e8f5e9",border:"none",borderRadius:8,
+                  padding:"6px 14px",fontSize:12,fontWeight:700,
+                  color:"#2e7d32",cursor:"pointer",whiteSpace:"nowrap"}},"📊 엑셀저장"),
+              h("button",{onClick:()=>setStageModal(null),
+                style:{background:"#f0f4ff",border:"none",borderRadius:8,
+                  padding:"6px 14px",fontSize:12,fontWeight:700,
+                  color:"var(--primary)",cursor:"pointer"}},"닫기")
+            )
           )
         ),
         // 테이블
