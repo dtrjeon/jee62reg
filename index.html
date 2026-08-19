@@ -343,8 +343,9 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
   const [saving,setSaving]=useState(false);
   const [err,setErr]=useState("");
   const [confirmDel,setConfirmDel]=useState(false);
+  const [confirmCancel,setConfirmCancel]=useState(false);
 
-  useEffect(()=>{ setForm(member||{}); setEditing(false); setErr(""); setConfirmDel(false); },[member]);
+  useEffect(()=>{ setForm(member||{}); setEditing(false); setErr(""); setConfirmDel(false); setConfirmCancel(false); },[member]);
 
   // 시트가 열려있는 동안 배경 페이지 스크롤/바운스 잠금 (iOS에서 배경이 같이 움직이며
   // 화면이 확대되어 보이는 현상 방지)
@@ -369,11 +370,11 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
   useEffect(()=>{
     const el=ref.current; if(!el)return;
     const ts=e=>{sy.current=e.touches[0].clientY};
-    const te=e=>{if(!editing&&!confirmDel&&e.changedTouches[0].clientY-sy.current>80)onClose()};
+    const te=e=>{if(!editing&&!confirmDel&&!confirmCancel&&e.changedTouches[0].clientY-sy.current>80)onClose()};
     el.addEventListener("touchstart",ts,{passive:true});
     el.addEventListener("touchend",te,{passive:true});
     return()=>{el.removeEventListener("touchstart",ts);el.removeEventListener("touchend",te)};
-  },[editing,confirmDel]);
+  },[editing,confirmDel,confirmCancel]);
 
   if(!member)return null;
   const sc=STAGE_COLORS[form.stage]||"#94a3b8";
@@ -460,9 +461,31 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
     finally{ setSaving(false); }
   };
 
+  // 신청취소 — 시트 행은 남겨두고 "취소여부" 열만 표시, 프론트 현황(대시보드/명단)에서는 완전히 제외됨
+  const doCancel=async()=>{
+    setSaving(true); setErr("");
+    try{
+      if(TEST_MODE){
+        await new Promise(r=>setTimeout(r,400));
+      }else{
+        const {before}=buildDiff(member,{});
+        const payload=JSON.stringify({
+          action:"cancel",
+          identify:{name:member.name||"",phone:member.phone||"",timestamp:member.timestamp||""},
+          log:{actor:actor||"",classKey:classKey||member.className||"",name:cleanName(member.name),before,after:{}}
+        });
+        const res=await fetch(GAS_URL,{method:"POST",body:payload});
+        const data=await res.json();
+        if(!data.ok) throw new Error(data.error||"신청취소 실패");
+      }
+      onSaved&&onSaved(null);
+    }catch(e){ setErr("❌ "+e.message); setConfirmCancel(false); }
+    finally{ setSaving(false); }
+  };
+
   return h("div",{
     style:{position:"fixed",inset:0,background:"rgba(10,15,40,0.55)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"},
-    onClick:e=>{if(e.target===e.currentTarget && !editing && !confirmDel)onClose()}
+    onClick:e=>{if(e.target===e.currentTarget && !editing && !confirmDel && !confirmCancel)onClose()}
   },
     h("div",{ref,style:{background:"#fff",borderRadius:"16px 16px 0 0",width:"100%",maxWidth:600,maxHeight:"88vh",overflowY:"auto",paddingBottom:20}},
       h("div",{style:{width:36,height:4,background:"rgba(0,0,20,0.12)",borderRadius:2,margin:"12px auto 14px"}}),
@@ -474,10 +497,13 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
             h("span",{style:{background:"#f0f4ff",color:"#1a3ab0",fontSize:12,fontWeight:600,padding:"3px 10px",borderRadius:6}},form.pos||member.pos)
           )
         ),
-        canEdit && !editing && !confirmDel && h("div",{style:{display:"flex",gap:6,flexShrink:0}},
+        canEdit && !editing && !confirmDel && !confirmCancel && h("div",{style:{display:"flex",gap:6,flexShrink:0}},
           h("button",{onClick:()=>setEditing(true),
             style:{fontSize:11,fontWeight:700,color:"#1a3ab0",background:"#eef2ff",border:"1px solid #c7d2fe",
               borderRadius:6,padding:"5px 10px",cursor:"pointer",whiteSpace:"nowrap"}},"✏️ 수정"),
+          h("button",{onClick:()=>setConfirmCancel(true),
+            style:{fontSize:11,fontWeight:700,color:"#b45309",background:"#fff7ed",border:"1px solid #fde68a",
+              borderRadius:6,padding:"5px 10px",cursor:"pointer",whiteSpace:"nowrap"}},"🚫 신청취소"),
           h("button",{onClick:()=>setConfirmDel(true),
             style:{fontSize:11,fontWeight:700,color:"#c62828",background:"#fdecea",border:"1px solid #f5c2c2",
               borderRadius:6,padding:"5px 10px",cursor:"pointer",whiteSpace:"nowrap"}},"🗑 삭제")
@@ -496,6 +522,20 @@ function DetailSheet({member,onClose,canEdit,onSaved,classKey,actor}){
               h("button",{onClick:doDelete,disabled:saving,
                 style:{flex:1,padding:13,background:"#c62828",border:"none",borderRadius:8,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",opacity:saving?0.7:1}},
                 saving?"삭제 중...":"삭제 확인")
+            )
+          )
+        : confirmCancel
+        ? h("div",{style:{padding:"20px"}},
+            h("div",{style:{fontSize:13,color:"#1a1f2e",fontWeight:600,marginBottom:6}},
+              `"${cleanName(member.name)}" 님의 신청을 취소하시겠습니까?`),
+            h("div",{style:{fontSize:12,color:"#8899aa",marginBottom:16}},"신청취소 시 대시보드/명단 등 모든 현황에서 즉시 제외됩니다. 구글시트에는 행이 남고 취소 이력만 기록됩니다."),
+            err&&h("div",{style:{marginBottom:10,fontSize:12,color:"#c62828",fontWeight:600}},err),
+            h("div",{style:{display:"flex",gap:8}},
+              h("button",{onClick:()=>{setConfirmCancel(false);setErr("");},disabled:saving,
+                style:{flex:1,padding:13,background:"#f1f3f9",border:"none",borderRadius:8,color:"#5a6480",fontSize:13,fontWeight:700,cursor:"pointer"}},"닫기"),
+              h("button",{onClick:doCancel,disabled:saving,
+                style:{flex:1,padding:13,background:"#b45309",border:"none",borderRadius:8,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",opacity:saving?0.7:1}},
+                saving?"처리 중...":"신청취소 확인")
             )
           )
         : h(Fragment,null,
@@ -1908,7 +1948,12 @@ function OcrPanel({onSaved}){
     // 안내 배너
     h("div",{style:{background:"linear-gradient(135deg,#1a2a6c,#1a3ab0)",borderRadius:12,
       padding:"14px 16px",marginBottom:14,color:"#fff"}},
-      h("div",{style:{fontSize:13,fontWeight:700,marginBottom:4}},"📷 수기 신청서 OCR 입력"),
+      h("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,marginBottom:4}},
+        h("div",{style:{fontSize:13,fontWeight:700}},"📷 수기 신청서 OCR 입력"),
+        h("span",{style:{fontSize:10,fontWeight:700,background:"rgba(255,255,255,0.18)",
+          border:"1px solid rgba(255,255,255,0.3)",borderRadius:20,padding:"3px 10px",whiteSpace:"nowrap"}},
+          OCR_PROVIDER==="anthropic"?"🧠 Claude 비전 인식":"⚡ OCR.space 인식")
+      ),
       h("div",{style:{fontSize:11,opacity:0.8,lineHeight:1.6}},
         "①사진 촬영 → ②자동 인식 확인 → ③수정 후 제출",h("br",null),
         "추출 결과는 이미지 아래에 바로 표시됩니다."
@@ -2189,6 +2234,103 @@ function InstallButton(){
 }
 
 // ══════════════════════════════════════════
+//  취소현황 탭 — 신청취소된 사람 리스트 + 복구
+// ══════════════════════════════════════════
+function CancelledPanel({list,user,onDataChange}){
+  const [search,       setSearch]       = useState("");
+  const [pendingKey,   setPendingKey]   = useState(""); // 복구 확인 대기중인 항목
+  const [busyKey,      setBusyKey]      = useState("");
+  const [toast,        setToast]        = useState("");
+  const canManage = !!user.isAdminTeam;
+  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(""),2200)};
+
+  const items = list||[];
+  const memberKey = m => `${m.name}|${m.phone}|${m.timestamp}`;
+
+  const filtered = items
+    .filter(m=>!search||m.name.includes(search)||(m.district||"").includes(search)||(m.pos||"").includes(search))
+    .sort((a,b)=>parseTs(b.timestamp)-parseTs(a.timestamp));
+
+  const doRestore=async(m)=>{
+    const key=memberKey(m);
+    setBusyKey(key);
+    try{
+      if(TEST_MODE){
+        await new Promise(r=>setTimeout(r,400));
+      }else{
+        const payload=JSON.stringify({
+          action:"restore",
+          identify:{name:m.name||"",phone:m.phone||"",timestamp:m.timestamp||""},
+          log:{actor:user.name||"",classKey:m.className||"",name:cleanName(m.name),before:{},after:{}}
+        });
+        const res=await fetch(GAS_URL,{method:"POST",body:payload});
+        const data=await res.json();
+        if(!data.ok) throw new Error(data.error||"복구 실패");
+      }
+      showToast(`"${cleanName(m.name)}" 님 복구 완료`);
+      onDataChange&&onDataChange();
+    }catch(e){
+      showToast("❌ "+e.message);
+    }finally{
+      setBusyKey(""); setPendingKey("");
+    }
+  };
+
+  if(items.length===0)return h("div",{style:{padding:"40px 24px",textAlign:"center",animation:"fadeIn 0.25s ease"}},
+    h("div",{style:{fontSize:48,marginBottom:16}},"🚫"),
+    h("div",{style:{fontSize:15,fontWeight:700,marginBottom:8}},"취소현황"),
+    h("div",{style:{fontSize:12,color:"#aab0c0",marginTop:8}},"신청취소된 신청자가 없습니다")
+  );
+
+  return h("div",{style:{padding:"14px 16px",animation:"fadeIn 0.25s ease"}},
+    h("div",{style:{background:"#fff",borderRadius:10,padding:"7px 12px",marginBottom:8,display:"flex",alignItems:"center",gap:8,boxShadow:"0 2px 8px rgba(26,58,176,0.06)"}},
+      h("span",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"🔍"),
+      h("input",{value:search,onChange:e=>setSearch(e.target.value),placeholder:"이름, 목장, 직분 검색…",style:{flex:1,border:"none",background:"transparent",fontSize:13,outline:"none"}}),
+      search&&h("span",{onClick:()=>setSearch(""),style:{fontSize:12,color:"var(--text3,#8899aa)",cursor:"pointer"}},"✕")
+    ),
+    h("div",{style:{fontSize:10,color:"var(--text3,#8899aa)",marginBottom:8,paddingInline:2}},
+      h("strong",{style:{color:"#b45309"}},filtered.length),"명 취소됨 (전체 ",items.length,"명)"
+    ),
+    filtered.length===0
+      ? h("div",{style:{textAlign:"center",padding:"40px 20px"}},h("div",{style:{fontSize:36,marginBottom:10}},"🔍"),h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"검색 결과가 없습니다"))
+      : filtered.map((m,i)=>{
+          const key=memberKey(m);
+          const isPending=pendingKey===key;
+          const isBusy=busyKey===key;
+          return h("div",{key,style:{...card,cursor:"default",opacity:0.92}},
+            h("div",{style:{display:"flex",alignItems:"center",padding:"10px 12px",gap:10}},
+              h("div",{style:{width:30,height:30,borderRadius:6,background:"linear-gradient(135deg,#b45309,#d97706)",color:"#fff",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"🚫"),
+              h("div",{style:{flex:1,minWidth:0}},
+                h("div",{style:{fontSize:13,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},cleanName(m.name)),
+                h("div",{style:{fontSize:10,color:"var(--text2,#4a5568)",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}},m.pos," · ",m.district),
+                h("div",{style:{display:"flex",gap:4,marginTop:4,flexWrap:"wrap"}},
+                  h("span",{style:{background:CLASS_BG[m.className]||"#f0f4ff",color:CLASS_COLOR[m.className]||"#1a3ab0",fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:700}},m.className),
+                  h("span",{style:{background:(STAGE_COLORS[m.stage]||"#94a3b8")+"22",color:STAGE_COLORS[m.stage]||"#94a3b8",fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:700,whiteSpace:"nowrap"}},m.stage)
+                ),
+                m.cancelInfo&&h("div",{style:{fontSize:9,color:"#b45309",marginTop:4}},"🚫 ",m.cancelInfo)
+              ),
+              canManage && h("div",{style:{flexShrink:0}},
+                !isPending
+                  ? h("button",{onClick:()=>setPendingKey(key),
+                      style:{fontSize:10,fontWeight:700,color:"#2e7d32",background:"#eefaf0",border:"1px solid #bfe3c6",
+                        borderRadius:6,padding:"5px 9px",cursor:"pointer",whiteSpace:"nowrap"}},"↩ 복구")
+                  : h("div",{style:{display:"flex",gap:4}},
+                      h("button",{onClick:()=>setPendingKey(""),disabled:isBusy,
+                        style:{fontSize:10,fontWeight:700,color:"#5a6480",background:"#f1f3f9",border:"none",
+                          borderRadius:6,padding:"5px 8px",cursor:"pointer"}},"취소"),
+                      h("button",{onClick:()=>doRestore(m),disabled:isBusy,
+                        style:{fontSize:10,fontWeight:700,color:"#fff",background:"#2e7d32",border:"none",
+                          borderRadius:6,padding:"5px 8px",cursor:"pointer",opacity:isBusy?0.7:1}},isBusy?"처리중":"확인")
+                    )
+              )
+            )
+          );
+        }),
+    h(Toast,{msg:toast})
+  );
+}
+
+// ══════════════════════════════════════════
 //  메인 App
 // ══════════════════════════════════════════
 function App(){
@@ -2233,8 +2375,10 @@ function App(){
     {key:"overall", lbl:"전체"},
     ...visibleClasses.map(k=>({key:k,lbl:k.replace("반","")})),
     {key:"ocr",     lbl:"수기입력"},
+    {key:"cancelled",lbl:"취소현황"},
     {key:"schedule",lbl:"기타"},
   ];
+  const cancelledList = classData._cancelled || [];
 
   return h("div",{style:{fontFamily:"'Noto Sans KR',sans-serif",background:"var(--bg)",minHeight:"100vh"}},
 
@@ -2270,12 +2414,13 @@ function App(){
     h("div",{className:"ee-tabbar"},
       tabs.map(t=>{
         const active=activeTab===t.key;
-        const cnt=t.key==="overall"?totalAll:(t.key==="ocr"||t.key==="schedule")?null:(classData[t.key]?.members||[]).length;
+        const cnt=t.key==="overall"?totalAll:t.key==="cancelled"?cancelledList.length:(t.key==="ocr"||t.key==="schedule")?null:(classData[t.key]?.members||[]).length;
         return h("div",{key:t.key,onClick:()=>setActiveTab(t.key),
           className:"ee-tab"+(active?" active":""),
           style:{display:"flex",flexDirection:"column",alignItems:"center",gap:1}},
           h("span",{style:{fontSize:10}},t.lbl),
           t.key==="ocr"&&h("span",{style:{fontSize:14,lineHeight:1}},"📷"),
+          t.key==="cancelled"&&h("span",{style:{fontSize:14,lineHeight:1}},"🚫"),
           t.key==="schedule"&&h("span",{style:{fontSize:14,lineHeight:1}},"📅"),
           cnt!==null&&h("span",{style:{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,color:active?"var(--primary)":"var(--text3)"}},`${cnt}명`)
         );
@@ -2290,13 +2435,14 @@ function App(){
     ),
 
     // 콘텐츠
-    loading&&Object.keys(classData).length===0&&activeTab!=="ocr"&&activeTab!=="schedule"
+    loading&&Object.keys(classData).length===0&&activeTab!=="ocr"&&activeTab!=="schedule"&&activeTab!=="cancelled"
       ? h("div",{style:{padding:"40px 24px",textAlign:"center"}},
           h("div",{style:{fontSize:32,marginBottom:12,display:"inline-block",animation:"spin 1s linear infinite"}},"↻"),
           h("div",{style:{fontSize:13,color:"var(--text3,#8899aa)"}},"구글시트에서 데이터를 불러오는 중...")
         )
       : activeTab==="overall"   ? h(OverallPanel,{classData,user,onDataChange:fetchData})
       : activeTab==="ocr"       ? h(OcrPanel,{onSaved:fetchData})
+      : activeTab==="cancelled" ? h(CancelledPanel,{list:cancelledList,user,onDataChange:fetchData})
       : activeTab==="schedule"  ? h(SchedulePanel,{user})
       : h(ClassPanel,{key:activeTab,classKey:activeTab,cls:classData[activeTab],user,onDataChange:fetchData})
   );
