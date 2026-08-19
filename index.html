@@ -1480,8 +1480,13 @@ function SchedulePanel({user}){
 }
 
 // ══════════════════════════════════════════════════════
-//  OCR 패널 — OCR.space API (브라우저 직접 호출, 서버 불필요)
+//  OCR 패널 — 신청서 사진 인식 방식 선택
 // ══════════════════════════════════════════════════════
+// v1.5: 신청서 사진 인식 엔진을 OCR_PROVIDER로 전환 가능:
+// 'ocrspace'  — 브라우저에서 OCR.space 직접 호출 (현재 사용, 키/백엔드 등록 불필요)
+// 'anthropic' — Apps Script 백엔드(action:'ocrForm')를 경유해 Claude 비전으로 인식
+//               (GAS 스크립트 속성에 ANTHROPIC_API_KEY를 등록한 뒤 이 값을 'anthropic'으로 바꾸면 전환됨)
+const OCR_PROVIDER = 'anthropic';
 const OCR_SPACE_KEY = "K83219514388957";
 
 // 신청서 텍스트 → 항목 파싱  (2026년 JUSTEE 신청서 양식 기준)
@@ -1732,7 +1737,7 @@ function OcrPanel({onSaved}){
     node.addEventListener("touchend",e=>{e.preventDefault();node.click();},{passive:false});
   },[]);
 
-  // OCR 실행 (엔진2 실패 시 엔진1로 재시도)
+  // OCR.space 호출 (엔진 단건)
   const callOcr=async(engine)=>{
     const fd=new FormData();
     fd.append("file",imgFile);
@@ -1747,17 +1752,52 @@ function OcrPanel({onSaved}){
     return ((data.ParsedResults||[])[0]||{}).ParsedText||"";
   };
 
+  // OCR.space로 인식 (엔진2 실패 시 엔진1로 재시도) — 기존 방식
+  const recognizeViaOcrSpace=async()=>{
+    let text="";
+    try{
+      text=await callOcr("2");
+    }catch(e1){/* 엔진2 실패 시 엔진1로 재시도 */}
+    if(!text.trim()){
+      try{ text=await callOcr("1"); }catch(e2){/* 무시하고 아래에서 최종 에러 처리 */}
+    }
+    return text;
+  };
+
+  // File → base64 dataURL 변환 (Anthropic 백엔드 전송용)
+  const fileToDataUrl=(file)=>new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(new Error("이미지 변환 실패"));
+    reader.readAsDataURL(file);
+  });
+
+  // 백엔드(action:'ocrForm')를 통해 Claude 비전으로 인식 — ANTHROPIC_API_KEY 등록 후 사용
+  const recognizeViaAnthropicBackend=async()=>{
+    const dataUrl=await fileToDataUrl(imgFile);
+    let res,json;
+    try{
+      res=await fetch(GAS_URL,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({ action:"ocrForm", imageDataUrl: dataUrl })
+      });
+      json=await res.json();
+    }catch(e){
+      throw new Error("서버 연결 실패");
+    }
+    if(json.status!=="ok") throw new Error(json.message||"인식 실패");
+    return json.text||"";
+  };
+
+  // OCR 실행 — OCR_PROVIDER 값에 따라 OCR.space 또는 Anthropic 백엔드 선택
   const runOcr=async()=>{
     if(!imgFile)return;
     setLoading(true); setOcrPhase("scanning"); setMsg("");
     try{
-      let text="";
-      try{
-        text=await callOcr("2");
-      }catch(e1){/* 엔진2 실패 시 엔진1로 재시도 */}
-      if(!text.trim()){
-        try{ text=await callOcr("1"); }catch(e2){/* 무시하고 아래에서 최종 에러 처리 */}
-      }
+      const text = (OCR_PROVIDER === 'anthropic')
+        ? await recognizeViaAnthropicBackend()
+        : await recognizeViaOcrSpace();
       if(!text.trim()) throw new Error("텍스트를 인식하지 못했습니다. 더 밝고 선명하게 촬영해주세요.");
 
       setOcrPhase("analyzing");
